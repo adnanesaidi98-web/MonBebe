@@ -1086,10 +1086,21 @@ async function getItem(key) {
   _cache[key]=val;
   return val;
 }
-// Force fresh fetch from Supabase (bypass cache) — used for photos
+// Précharge toutes les données depuis Supabase au démarrage
+async function preloadAllData() {
+  const keys = ['bebe_profile','bebe_notes','bebe_growth','bebe_vaccins','bebe_milestones','bebe_feeds','bebe_sleeps','bebe_photos'];
+  await Promise.all(keys.map(async key => {
+    try {
+      const val = await dbGet(key);
+      _cache[key] = val;
+    } catch(e) { console.warn('preload error for', key, e); }
+  }));
+}
+
+// Force fresh fetch from Supabase (bypass cache)
 async function getItemFresh(key) {
   const val = await dbGet(key);
-  _cache[key]=val;
+  _cache[key] = val;
   return val;
 }
 async function setItem(key,value) {
@@ -1161,6 +1172,7 @@ async function launchApp(user) {
 
   try {
     await migrateLocalStorage();
+    await preloadAllData();   // ← charge tout depuis Supabase en une fois
     await loadDashboard();
   } catch(e) { console.warn('launchApp error:', e); }
 
