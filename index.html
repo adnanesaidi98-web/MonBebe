@@ -2873,7 +2873,7 @@ async function renderCroissanceTab(editIdx) {
     <div class="card" style="margin:12px 16px">
       <div class="card-header"><span class="card-icon">📈</span><div class="card-title">Courbe de poids</div></div>
       <div class="card-body" style="padding:12px 8px">
-        <canvas id="growthCanvas" width="340" height="200" style="width:100%;height:auto"></canvas>
+        <canvas id="growthCanvas" style="width:100%;max-height:260px"></canvas>
       </div>
     </div>
     <div class="card" style="margin:12px 16px">
@@ -2938,42 +2938,163 @@ async function saveGrowth() {
 async function drawGrowthChart() {
   const canvas = document.getElementById('growthCanvas');
   if(!canvas) return;
-  const ctx = canvas.getContext('2d');
   const entries = (await getItem('bebe_growth')) || [];
-  const W=canvas.width,H=canvas.height,pad={t:20,r:20,b:40,l:45};
-  ctx.clearRect(0,0,W,H); ctx.fillStyle='#FDFAF6'; ctx.fillRect(0,0,W,H);
-  const omsP3=[3.2,3.9,4.7,5.4,6.0,6.6,7.1,7.5,7.9,8.2,8.5,8.7,9.0];
-  const omsP50=[3.8,4.9,5.8,6.6,7.2,7.8,8.2,8.6,9.0,9.4,9.7,9.9,10.2];
-  const omsP97=[4.5,5.9,7.1,8.0,8.7,9.3,9.8,10.3,10.7,11.1,11.5,11.8,12.1];
-  const maxAge=12,minW=2.5,maxW=13;
-  const xS=(age)=>pad.l+(age/maxAge)*(W-pad.l-pad.r);
-  const yS=(w)=>H-pad.b-((w-minW)/(maxW-minW))*(H-pad.t-pad.b);
-  ctx.strokeStyle='rgba(180,140,140,0.12)';ctx.lineWidth=1;
-  for(let kg=3;kg<=12;kg+=1.5){ctx.beginPath();ctx.moveTo(pad.l,yS(kg));ctx.lineTo(W-pad.r,yS(kg));ctx.stroke();}
-  for(let mo=0;mo<=12;mo+=3){ctx.beginPath();ctx.moveTo(xS(mo),pad.t);ctx.lineTo(xS(mo),H-pad.b);ctx.stroke();}
-  ctx.fillStyle='#A89090';ctx.font='10px Nunito';ctx.textAlign='right';
-  [3,4.5,6,7.5,9,10.5,12].forEach(kg=>{ctx.fillText(kg+'kg',pad.l-5,yS(kg)+4);});
-  ctx.textAlign='center';
-  [0,3,6,9,12].forEach(mo=>{ctx.fillText(mo+'m',xS(mo),H-8);});
-  function drawRef(data,color,dashed=false){
-    ctx.strokeStyle=color;ctx.lineWidth=1.5;
-    if(dashed)ctx.setLineDash([4,3]);else ctx.setLineDash([]);
-    ctx.beginPath();data.forEach((w,i)=>{const x=xS(i);const y=yS(w);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-    ctx.stroke();ctx.setLineDash([]);
-  }
-  drawRef(omsP3,'rgba(184,201,176,0.7)',true);
-  drawRef(omsP50,'rgba(143,175,133,0.8)');
-  drawRef(omsP97,'rgba(184,201,176,0.7)',true);
-  ctx.fillStyle='rgba(143,175,133,0.8)';ctx.font='9px Nunito';ctx.textAlign='left';
-  ctx.fillText('P50',W-pad.r+2,yS(omsP50[12]));
-  if(entries.length>0){
-    ctx.strokeStyle='#E8A0B0';ctx.lineWidth=2.5;ctx.setLineDash([]);
-    ctx.beginPath();entries.forEach((e,i)=>{const x=xS(e.age);const y=yS(e.poids);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
-    entries.forEach(e=>{
-      ctx.fillStyle='#E8A0B0';ctx.beginPath();ctx.arc(xS(e.age),yS(e.poids),4,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(xS(e.age),yS(e.poids),2,0,Math.PI*2);ctx.fill();
-    });
-  }
+
+  // OMS data points at 0,1,2,...,18 months (filles mixte)
+  const omsLabels = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+  const omsP3  = [2.9,3.6,4.4,5.1,5.6,6.1,6.5,6.9,7.2,7.5,7.7,8.0,8.2,8.4,8.6,8.8,9.0,9.2,9.4];
+  const omsP15 = [3.2,4.0,4.9,5.6,6.2,6.7,7.1,7.5,7.9,8.2,8.5,8.7,9.0,9.2,9.4,9.6,9.8,10.0,10.2];
+  const omsP50 = [3.5,4.5,5.6,6.4,7.0,7.6,8.1,8.6,9.0,9.4,9.7,10.0,10.3,10.6,10.8,11.1,11.3,11.5,11.8];
+  const omsP85 = [3.9,5.1,6.3,7.2,7.9,8.5,9.1,9.6,10.0,10.5,10.8,11.2,11.5,11.8,12.1,12.4,12.7,13.0,13.3];
+  const omsP97 = [4.3,5.6,7.0,7.9,8.7,9.4,10.0,10.5,11.0,11.4,11.8,12.2,12.6,13.0,13.4,13.7,14.1,14.5,14.8];
+
+  // Baby data mapped to months
+  const babyData = omsLabels.map(m => {
+    const e = entries.find(x => x.age === m || Math.round(x.age) === m);
+    return e ? e.poids : null;
+  });
+
+  // Destroy previous chart if exists
+  if(window._growthChart) { window._growthChart.destroy(); window._growthChart = null; }
+
+  const profile = (await getItem('bebe_profile')) || {};
+  const bebeNom = profile.nom || 'Bébé';
+
+  window._growthChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: omsLabels.map(m => m === 0 ? 'Naissance' : m + ' mois'),
+      datasets: [
+        // P3-P97 fill zone (light blue)
+        {
+          label: 'Zone P3–P97',
+          data: omsP97,
+          fill: '-1',
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(100,160,240,0.10)',
+          pointRadius: 0, tension: 0.4,
+        },
+        {
+          label: 'P3',
+          data: omsP3,
+          fill: false,
+          borderColor: 'rgba(100,160,240,0.25)',
+          borderWidth: 1.5,
+          borderDash: [4,3],
+          pointRadius: 0, tension: 0.4,
+        },
+        // P15-P85 fill zone (medium blue)
+        {
+          label: 'Zone P15–P85',
+          data: omsP85,
+          fill: '-1',
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(100,160,240,0.15)',
+          pointRadius: 0, tension: 0.4,
+        },
+        {
+          label: 'P15',
+          data: omsP15,
+          fill: false,
+          borderColor: 'rgba(100,160,240,0.3)',
+          borderWidth: 1,
+          borderDash: [3,3],
+          pointRadius: 0, tension: 0.4,
+        },
+        // P50 median
+        {
+          label: 'Médiane OMS',
+          data: omsP50,
+          fill: false,
+          borderColor: 'rgba(100,160,240,0.55)',
+          borderWidth: 2,
+          pointRadius: 0, tension: 0.4,
+        },
+        // Baby's curve
+        {
+          label: bebeNom,
+          data: babyData,
+          fill: false,
+          borderColor: '#E8607A',
+          borderWidth: 3,
+          backgroundColor: '#E8607A',
+          pointRadius: babyData.map(v => v !== null ? 5 : 0),
+          pointHoverRadius: 8,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#E8607A',
+          pointBorderWidth: 2.5,
+          tension: 0.35,
+          spanGaps: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            filter: item => ['Médiane OMS', bebeNom].includes(item.text),
+            usePointStyle: true,
+            pointStyle: 'circle',
+            font: { family: "'DM Sans', sans-serif", size: 11 },
+            color: '#1A1218',
+            padding: 16,
+          }
+        },
+        tooltip: {
+          backgroundColor: '#fff',
+          titleColor: '#1A1218',
+          bodyColor: '#666',
+          borderColor: 'rgba(26,18,24,0.1)',
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 12,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          callbacks: {
+            title: items => items[0].label,
+            label: item => {
+              if(item.dataset.label === bebeNom && item.raw !== null)
+                return ` ${bebeNom} : ${item.raw} kg`;
+              if(item.dataset.label === 'Médiane OMS')
+                return ` Médiane OMS : ${item.raw} kg`;
+              return null;
+            },
+            filter: item => item.raw !== null &&
+              ['Médiane OMS', bebeNom].includes(item.dataset.label)
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(26,18,24,0.05)', drawBorder: false },
+          ticks: {
+            font: { family: "'DM Sans', sans-serif", size: 10 },
+            color: '#999',
+            maxRotation: 0,
+            callback: (val, i) => [0,3,6,9,12,15,18].includes(omsLabels[i])
+              ? (omsLabels[i] === 0 ? 'Nais.' : omsLabels[i]+'m') : ''
+          },
+          border: { display: false }
+        },
+        y: {
+          grid: { color: 'rgba(26,18,24,0.05)', drawBorder: false },
+          ticks: {
+            font: { family: "'DM Sans', sans-serif", size: 10 },
+            color: '#999',
+            callback: v => v + ' kg',
+            stepSize: 2
+          },
+          min: 2,
+          max: 16,
+          border: { display: false }
+        }
+      }
+    }
+  });
 }
 
 // VACCINS
