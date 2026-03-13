@@ -1157,29 +1157,67 @@ document.getElementById('authBtn').addEventListener('click',async()=>{
 });
 document.getElementById('btnLogout').addEventListener('click',async()=>{ await sb.auth.signOut(); });
 
+function hideSplashShowApp() {
+  const splash = document.getElementById('splash');
+  if(splash) { splash.classList.add('hide'); setTimeout(()=>{ splash.style.display='none'; },900); }
+  document.getElementById('loadingOverlay').classList.add('hide');
+  document.getElementById('app').classList.add('visible');
+  initMonths();
+}
+
 async function launchApp(user) {
-  currentUser=user;
+  if(currentUser && currentUser.id === user.id) return; // already launched
+  currentUser = user;
   document.getElementById('auth-screen').classList.add('hide');
   document.getElementById('userBar').style.display='flex';
   document.getElementById('userEmail').textContent=user.email;
-  const splash=document.getElementById('splash');
+  document.getElementById('loadingOverlay').classList.add('hide');
+  const splash = document.getElementById('splash');
   splash.style.display='flex';
-  await migrateLocalStorage();
-  await loadDashboard();
-  setTimeout(()=>{
-    splash.classList.add('hide');
-    setTimeout(()=>{ splash.style.display='none'; document.getElementById('app').classList.add('visible'); initMonths(); },900);
-  },1800);
+
+  // Safety timeout — if something hangs, force-show the app after 5s
+  const safetyTimer = setTimeout(()=>{ hideSplashShowApp(); }, 5000);
+
+  try {
+    await migrateLocalStorage();
+    await loadDashboard();
+  } catch(e) { console.warn('launchApp error:', e); }
+
+  clearTimeout(safetyTimer);
+  // Show splash briefly only on first visit, skip animation on refresh
+  const isRefresh = performance.navigation ? performance.navigation.type === 1 : false;
+  const delay = isRefresh ? 400 : 1600;
+  setTimeout(()=>{ hideSplashShowApp(); }, delay);
 }
 
-window.addEventListener('load',async()=>{
-  sb.auth.onAuthStateChange(async(event,session)=>{
+window.addEventListener('load', async()=>{
+  // First, check session immediately — don't wait for onAuthStateChange
+  try {
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session?.user) {
+      await launchApp(session.user);
+    } else {
+      document.getElementById('loadingOverlay').classList.add('hide');
+      document.getElementById('auth-screen').classList.remove('hide');
+    }
+  } catch(e) {
+    console.warn('getSession error:', e);
     document.getElementById('loadingOverlay').classList.add('hide');
-    if(session?.user){ if(!currentUser) await launchApp(session.user); }
-    else { currentUser=null; document.getElementById('auth-screen').classList.remove('hide'); document.getElementById('userBar').style.display='none'; document.getElementById('app').classList.remove('visible'); }
+    document.getElementById('auth-screen').classList.remove('hide');
+  }
+
+  // Also listen for future auth changes (login/logout)
+  sb.auth.onAuthStateChange(async(event, session)=>{
+    if(event === 'SIGNED_IN' && session?.user) {
+      await launchApp(session.user);
+    } else if(event === 'SIGNED_OUT') {
+      currentUser = null;
+      document.getElementById('auth-screen').classList.remove('hide');
+      document.getElementById('userBar').style.display='none';
+      document.getElementById('app').classList.remove('visible');
+      document.getElementById('splash').style.display='none';
+    }
   });
-  const{data:{session}}=await sb.auth.getSession();
-  if(!session){ document.getElementById('loadingOverlay').classList.add('hide'); document.getElementById('auth-screen').classList.remove('hide'); }
 });
 
 // ══════════════════════════════════════════════════════════
