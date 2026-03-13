@@ -4,523 +4,809 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mon Bébé">
 <title>Mon Bébé — Guide de Sage-Femme</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* ════════════════════════════════════════════
+   PREMIUM DESIGN SYSTEM — Mon Bébé
+   Inspiré: Spotify, Apple Health, Things 3
+════════════════════════════════════════════ */
 :root {
-  --rose: #F2C4CE;
-  --rose-deep: #E8A0B0;
-  --rose-pale: #FDF0F3;
-  --beige: #F5EDE3;
-  --beige-warm: #EDE0D0;
-  --sage: #B8C9B0;
-  --sage-deep: #8FAF85;
-  --sage-pale: #EFF4EE;
-  --cream: #FDFAF6;
-  --text: #3D3030;
-  --text-soft: #7A6060;
-  --text-light: #A89090;
-  --white: #FFFFFF;
-  --shadow: rgba(180,140,140,0.12);
-  --shadow-md: rgba(180,140,140,0.2);
-  --radius: 20px;
-  --radius-sm: 12px;
-  --nav-h: 72px;
+  /* Palette principale */
+  --ink: #1A1218;
+  --ink-60: rgba(26,18,24,0.6);
+  --ink-30: rgba(26,18,24,0.3);
+  --ink-10: rgba(26,18,24,0.08);
+
+  --blush: #E8C5CF;
+  --blush-deep: #C9869A;
+  --blush-glow: rgba(232,197,207,0.35);
+  --blush-pale: #FDF5F7;
+
+  --sage: #7FA882;
+  --sage-pale: #EFF5EF;
+  --sage-glow: rgba(127,168,130,0.25);
+
+  --amber: #D4956A;
+  --amber-pale: #FDF3EC;
+
+  --surface: #FFFFFF;
+  --surface-2: #FAF7F8;
+  --surface-3: #F4EFF1;
+  --surface-border: rgba(26,18,24,0.06);
+
+  /* Typographie */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+
+  /* Spacing */
+  --nav-h: 80px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --r-lg: 24px;
+  --r-md: 16px;
+  --r-sm: 10px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 4px rgba(26,18,24,0.06), 0 2px 12px rgba(26,18,24,0.04);
+  --shadow-md: 0 4px 24px rgba(26,18,24,0.08), 0 1px 4px rgba(26,18,24,0.04);
+  --shadow-lg: 0 12px 48px rgba(26,18,24,0.12), 0 4px 16px rgba(26,18,24,0.06);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
 body {
-  font-family: 'Nunito', sans-serif;
-  background: var(--cream);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+  font-family: var(--font-body);
+  background: var(--surface-2);
+  color: var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ─── SPLASH ─── */
 #splash {
-  position: fixed; inset: 0; z-index: 1000;
-  background: linear-gradient(160deg, #FDF0F3 0%, #F5EDE3 50%, #EFF4EE 100%);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  position:fixed; inset:0; z-index:1000;
+  background: var(--ink);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  transition: opacity 0.9s cubic-bezier(0.4,0,0.2,1);
 }
-#splash.hide { opacity:0; transform:scale(1.05); pointer-events:none; }
-.splash-flower {
-  font-size: 64px; animation: bloom 1.5s ease forwards;
-  opacity:0; transform:scale(0.5);
+#splash.hide { opacity:0; pointer-events:none; }
+.splash-logo {
+  width:72px; height:72px; border-radius:20px;
+  background: linear-gradient(145deg, var(--blush), var(--blush-deep));
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px;
+  box-shadow: 0 0 60px rgba(232,197,207,0.4);
+  animation: splashIn 1s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  opacity:0;
 }
-@keyframes bloom {
-  to { opacity:1; transform:scale(1) rotate(5deg); }
-}
+@keyframes splashIn { to { opacity:1; transform:scale(1); } from { transform:scale(0.7); } }
 .splash-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 38px; font-weight: 300; color: var(--text);
-  margin-top: 16px; letter-spacing: 1px;
-  animation: fadeUp 1s 0.4s ease forwards; opacity:0; transform:translateY(16px);
+  font-family: var(--font-display);
+  font-size:28px; font-weight:600; color:#fff;
+  margin-top:20px; letter-spacing:-0.3px;
+  animation: fadeUp 0.8s 0.4s ease forwards; opacity:0; transform:translateY(12px);
 }
 .splash-sub {
-  font-size: 13px; color: var(--text-soft); margin-top: 8px; letter-spacing: 2px; text-transform: uppercase;
-  animation: fadeUp 1s 0.7s ease forwards; opacity:0; transform:translateY(12px);
+  font-size:12px; color:rgba(255,255,255,0.45); margin-top:6px;
+  letter-spacing:2px; text-transform:uppercase;
+  animation: fadeUp 0.8s 0.6s ease forwards; opacity:0; transform:translateY(8px);
 }
 @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
 
 /* ─── APP SHELL ─── */
-#app { display:none; height:100vh; display:flex; flex-direction:column; }
+#app { display:none; height:100vh; flex-direction:column; }
 #app.visible { display:flex; }
 
 /* ─── SCREENS ─── */
 .screen {
-  flex:1; overflow-y:auto; padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 16px);
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+  display:none; flex:1; overflow-y:auto;
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px);
+  -webkit-overflow-scrolling:touch;
 }
+.screen.active { display:block; }
 
-/* ─── BOTTOM NAV ─── */
+/* ─── BOTTOM NAV — Style Spotify ─── */
 .bottom-nav {
-  position: fixed; bottom:0; left:0; right:0;
+  position:fixed; bottom:0; left:0; right:0;
   height: calc(var(--nav-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: rgba(253,250,246,0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(180,140,140,0.12);
-  display: flex; align-items: flex-start; padding-top: 8px;
-  z-index: 100;
-  box-shadow: 0 -8px 32px rgba(180,140,140,0.08);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--surface-border);
+  display:flex; align-items:flex-start; padding-top:10px;
+  z-index:100;
 }
 .nav-btn {
-  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-  background:none; border:none; cursor:pointer; padding:4px 2px;
-  transition: transform 0.2s ease;
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  background:none; border:none; cursor:pointer; padding:4px 0;
+  transition: transform 0.15s ease;
 }
-.nav-btn:active { transform: scale(0.9); }
+.nav-btn:active { transform:scale(0.88); }
 .nav-icon {
-  font-size: 22px; line-height:1;
-  transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; line-height:1;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
 .nav-label {
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.5px;
-  color: var(--text-light); transition: color 0.2s;
-  text-align:center; line-height:1.2;
+  font-size:10px; font-weight:600; letter-spacing:0.3px;
+  color: var(--ink-30);
+  transition: color 0.2s;
 }
-.nav-btn.active .nav-icon { transform: scale(1.2) translateY(-2px); }
-.nav-btn.active .nav-label { color: var(--rose-deep); }
-.nav-dot {
-  width:4px; height:4px; border-radius:50%;
-  background: var(--rose-deep); margin-top:1px;
-  opacity:0; transition:opacity 0.2s;
-}
-.nav-btn.active .nav-dot { opacity:1; }
+.nav-btn.active .nav-icon { transform: scale(1.1) translateY(-1px); }
+.nav-btn.active .nav-label { color: var(--blush-deep); }
 
-/* ─── HEADERS ─── */
+/* ─── PAGE HEADERS ─── */
 .page-header {
-  padding: 52px 20px 24px;
-  background: linear-gradient(160deg, var(--rose-pale) 0%, var(--beige) 100%);
-  position: relative; overflow:hidden;
+  padding: 56px 20px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+  position:sticky; top:0; z-index:10;
 }
-.page-header::before {
-  content:''; position:absolute; top:-40px; right:-40px;
-  width:180px; height:180px; border-radius:50%;
-  background: rgba(242,196,206,0.3); pointer-events:none;
+.page-eyebrow {
+  font-size:11px; font-weight:600; letter-spacing:2px;
+  text-transform:uppercase; color:var(--blush-deep);
+  margin-bottom:4px;
 }
 .page-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 32px; font-weight: 400; line-height:1.2;
-  color: var(--text);
+  font-family: var(--font-display);
+  font-size:26px; font-weight:700; color:var(--ink);
+  letter-spacing:-0.5px; line-height:1.2;
 }
 .page-subtitle {
-  font-size: 13px; color: var(--text-soft); margin-top:4px;
-  font-weight: 400; line-height: 1.5;
-}
-
-/* ─── MONTH SELECTOR ─── */
-.month-strip {
-  display:flex; gap:8px; padding:16px 20px;
-  overflow-x:auto; scrollbar-width:none;
-  background: var(--cream); position:sticky; top:0; z-index:10;
-  box-shadow: 0 4px 16px rgba(180,140,140,0.08);
-}
-.month-strip::-webkit-scrollbar { display:none; }
-.month-pill {
-  flex-shrink:0; padding:8px 16px; border-radius:50px;
-  font-size:13px; font-weight:600; cursor:pointer;
-  background: var(--white); color: var(--text-soft);
-  border: 1.5px solid transparent;
-  transition: all 0.25s ease;
-  white-space:nowrap;
-}
-.month-pill.active {
-  background: linear-gradient(135deg, var(--rose), var(--rose-deep));
-  color: var(--white); border-color: transparent;
-  box-shadow: 0 4px 12px rgba(232,160,176,0.4);
-  transform: translateY(-1px);
+  font-size:13px; color:var(--ink-60);
+  margin-top:3px; font-weight:400; line-height:1.4;
 }
 
 /* ─── CARDS ─── */
 .card {
-  margin: 12px 16px; border-radius: var(--radius);
-  background: var(--white); overflow:hidden;
-  box-shadow: 0 4px 20px var(--shadow);
-  animation: cardIn 0.4s ease forwards;
+  margin:10px 16px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--surface-border);
+  overflow:hidden;
+  box-shadow: var(--shadow-sm);
+  animation: cardIn 0.35s cubic-bezier(0.4,0,0.2,1) forwards;
 }
 @keyframes cardIn {
-  from { opacity:0; transform:translateY(12px); }
+  from { opacity:0; transform:translateY(10px); }
   to { opacity:1; transform:translateY(0); }
 }
 .card-header {
-  padding:16px 20px 12px;
+  padding:14px 18px 12px;
   display:flex; align-items:center; gap:10px;
-  border-bottom: 1px solid rgba(180,140,140,0.08);
+  border-bottom:1px solid var(--surface-border);
 }
-.card-icon { font-size:20px; flex-shrink:0; }
+.card-icon { font-size:18px; flex-shrink:0; }
 .card-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size:20px; font-weight:500; color:var(--text);
+  font-family: var(--font-display);
+  font-size:17px; font-weight:600; color:var(--ink);
 }
-.card-body { padding:16px 20px; }
+.card-body { padding:14px 18px; }
 
 /* ─── SAGE-FEMME MESSAGE ─── */
 .sf-message {
-  margin:12px 16px; border-radius: var(--radius);
-  background: linear-gradient(135deg, #FDF0F3, #F5EDE3);
-  border: 1.5px solid rgba(242,196,206,0.5);
-  padding:20px; position:relative; overflow:hidden;
+  margin:10px 16px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border:1px solid var(--surface-border);
+  padding:18px;
+  position:relative; overflow:hidden;
 }
 .sf-message::before {
-  content:''; position:absolute; top:-20px; right:-20px;
-  width:100px; height:100px; border-radius:50%;
-  background:rgba(242,196,206,0.2); pointer-events:none;
+  content:''; position:absolute; top:-30px; right:-30px;
+  width:120px; height:120px; border-radius:50%;
+  background: var(--blush-glow); pointer-events:none;
 }
-.sf-avatar { font-size:28px; margin-bottom:8px; display:block; }
+.sf-avatar { font-size:24px; margin-bottom:6px; display:block; }
 .sf-name {
-  font-size:11px; text-transform:uppercase; letter-spacing:2px;
-  color: var(--text-soft); font-weight:700; margin-bottom:8px;
+  font-size:10px; text-transform:uppercase; letter-spacing:2px;
+  color:var(--blush-deep); font-weight:700; margin-bottom:8px;
 }
 .sf-text {
-  font-family:'Cormorant Garamond', serif;
-  font-size:18px; font-weight:400; font-style:italic;
-  color:var(--text); line-height:1.6;
+  font-family: var(--font-display);
+  font-size:16px; font-weight:400; font-style:italic;
+  color:var(--ink); line-height:1.65;
 }
 
-/* ─── LIST ITEMS ─── */
-.info-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
-.info-item {
-  display:flex; gap:10px; align-items:flex-start;
-  font-size:14px; line-height:1.6; color:var(--text-soft);
+/* ─── BUTTONS — PREMIUM ─── */
+.btn-primary {
+  width:100%; padding:15px; border-radius:var(--r-md);
+  background: var(--ink);
+  color: var(--surface); font-family: var(--font-body);
+  font-size:15px; font-weight:600; border:none; cursor:pointer;
+  letter-spacing:0.1px;
+  transition: all 0.2s ease;
+  position:relative; overflow:hidden;
 }
-.info-bullet {
-  flex-shrink:0; width:20px; height:20px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:700; color:var(--white);
-  background: linear-gradient(135deg, var(--rose), var(--rose-deep));
-  margin-top:1px;
+.btn-primary::after {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,0); transition:0.15s;
 }
-.info-item b { color:var(--text); }
+.btn-primary:active::after { background:rgba(255,255,255,0.1); }
+.btn-primary:active { transform:scale(0.98); }
 
-/* ─── ALERT BOXES ─── */
-.alert-ok {
-  background: linear-gradient(135deg, #EFF4EE, #E8F0E5);
-  border-left:4px solid var(--sage-deep);
-  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
-  padding:14px 16px; margin:8px 0;
+.btn-blush {
+  width:100%; padding:15px; border-radius:var(--r-md);
+  background: linear-gradient(135deg, var(--blush) 0%, var(--blush-deep) 100%);
+  color: #fff; font-family: var(--font-body);
+  font-size:15px; font-weight:600; border:none; cursor:pointer;
+  box-shadow: 0 4px 20px var(--blush-glow);
+  transition: all 0.2s ease;
 }
-.alert-warn {
-  background: linear-gradient(135deg, #FFF8F0, #FFF0E8);
-  border-left:4px solid #E8A870;
-  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
-  padding:14px 16px; margin:8px 0;
-}
-.alert-urg {
-  background: linear-gradient(135deg, #FDF0F3, #F8E8EC);
-  border-left:4px solid var(--rose-deep);
-  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
-  padding:14px 16px; margin:8px 0;
-}
-.alert-title {
-  font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;
-  margin-bottom:8px;
-}
-.alert-ok .alert-title { color:var(--sage-deep); }
-.alert-warn .alert-title { color:#C87A40; }
-.alert-urg .alert-title { color:var(--rose-deep); }
-.alert-text { font-size:13.5px; line-height:1.6; color:var(--text-soft); }
-.alert-text b { color:var(--text); }
+.btn-blush:active { transform:scale(0.98); opacity:0.9; }
 
-/* ─── VACCINE BADGE ─── */
-.vaccine-badge {
-  display:inline-flex; align-items:center; gap:6px;
-  background:var(--sage-pale); border:1.5px solid var(--sage);
-  border-radius:50px; padding:6px 12px; margin:4px 4px 4px 0;
-  font-size:12px; font-weight:600; color: var(--sage-deep);
+.btn-sage {
+  width:100%; padding:15px; border-radius:var(--r-md);
+  background: linear-gradient(135deg, var(--sage) 0%, #5A8A5D 100%);
+  color:#fff; font-family:var(--font-body);
+  font-size:15px; font-weight:600; border:none; cursor:pointer;
+  box-shadow: 0 4px 20px var(--sage-glow);
+  transition: all 0.2s ease;
 }
+.btn-sage:active { transform:scale(0.98); opacity:0.9; }
 
-/* ─── SECTION TITLE ─── */
-.section-label {
-  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:2px;
-  color:var(--text-light); padding:0 0 8px;
+.btn-ghost {
+  padding:10px 18px; border-radius:50px;
+  border:1.5px solid var(--surface-border);
+  background:var(--surface); color:var(--ink-60);
+  font-family:var(--font-body); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.15s;
 }
-.section-big {
-  font-family:'Cormorant Garamond', serif;
-  font-size:22px; font-weight:500; color:var(--text);
-  margin-bottom:12px;
-}
+.btn-ghost:active { background:var(--surface-3); }
 
-/* ─── GROWTH PILL ─── */
-.growth-row {
-  display:flex; gap:12px; margin:4px 0;
+/* ─── INPUTS ─── */
+.input-group { margin-bottom:14px; }
+.input-label {
+  font-size:11px; font-weight:600; color:var(--ink-60);
+  text-transform:uppercase; letter-spacing:1.5px;
+  margin-bottom:6px; display:block;
 }
-.growth-pill {
-  flex:1; background:var(--beige); border-radius:var(--radius-sm);
-  padding:12px; text-align:center;
+.input-field {
+  width:100%; padding:13px 15px;
+  border-radius:var(--r-md);
+  border:1.5px solid var(--surface-border);
+  background:var(--surface-2);
+  font-family:var(--font-body); font-size:14px; color:var(--ink);
+  outline:none; transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance:none;
 }
-.growth-val {
-  font-family:'Cormorant Garamond', serif;
-  font-size:26px; font-weight:500; color:var(--text);
-}
-.growth-unit { font-size:11px; color:var(--text-light); margin-top:2px; }
-.growth-label { font-size:12px; color:var(--text-soft); font-weight:600; margin-top:4px; }
+.input-field:focus { border-color:var(--blush-deep); background:var(--surface); }
+textarea.input-field { min-height:80px; resize:vertical; }
 
-/* ─── TABS (inner) ─── */
+/* ─── INNER TABS ─── */
 .inner-tabs {
-  display:flex; gap:0; background:var(--beige); border-radius:var(--radius-sm);
-  padding:4px; margin-bottom:16px;
+  display:flex; gap:0; background:var(--surface-3);
+  border-radius:var(--r-md); padding:3px; margin-bottom:14px;
 }
 .inner-tab {
   flex:1; padding:8px 4px; border:none; background:none; cursor:pointer;
-  font-family:'Nunito', sans-serif; font-size:12px; font-weight:600;
-  color:var(--text-soft); border-radius:calc(var(--radius-sm) - 4px);
-  transition:all 0.2s ease;
+  font-family:var(--font-body); font-size:12px; font-weight:600;
+  color:var(--ink-60); border-radius:calc(var(--r-md) - 3px);
+  transition:all 0.2s;
 }
 .inner-tab.active {
-  background:var(--white); color:var(--rose-deep);
-  box-shadow:0 2px 8px var(--shadow);
+  background:var(--surface); color:var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
-/* ─── JOURNAL ─── */
-.input-group { margin-bottom:16px; }
-.input-label {
-  font-size:12px; font-weight:700; color:var(--text-soft);
-  text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; display:block;
+/* ─── MONTH STRIP ─── */
+.month-strip {
+  display:flex; gap:6px; padding:12px 16px;
+  overflow-x:auto; scrollbar-width:none;
+  background:var(--surface); position:sticky; top:0; z-index:10;
+  border-bottom:1px solid var(--surface-border);
 }
-.input-field {
-  width:100%; padding:12px 16px; border-radius:var(--radius-sm);
-  border:1.5px solid var(--beige-warm); background:var(--white);
-  font-family:'Nunito', sans-serif; font-size:14px; color:var(--text);
-  outline:none; transition:border-color 0.2s;
-  -webkit-appearance:none;
+.month-strip::-webkit-scrollbar { display:none; }
+.month-pill {
+  flex-shrink:0; padding:7px 16px; border-radius:50px;
+  font-size:13px; font-weight:600; cursor:pointer;
+  background:var(--surface-2); color:var(--ink-60);
+  border:1.5px solid transparent; font-family:var(--font-body);
+  transition:all 0.2s;
 }
-.input-field:focus { border-color:var(--rose); }
-textarea.input-field { min-height:80px; resize:vertical; }
-.btn-primary {
-  width:100%; padding:14px; border-radius:var(--radius-sm);
-  background:linear-gradient(135deg, var(--rose), var(--rose-deep));
-  color:var(--white); font-family:'Nunito', sans-serif;
-  font-size:15px; font-weight:700; border:none; cursor:pointer;
-  box-shadow:0 4px 16px rgba(232,160,176,0.35);
-  transition:all 0.2s ease;
+.month-pill.active {
+  background:var(--ink); color:#fff;
+  border-color:transparent;
 }
-.btn-primary:active { transform:scale(0.98); }
-.btn-sage {
-  width:100%; padding:14px; border-radius:var(--radius-sm);
-  background:linear-gradient(135deg, var(--sage), var(--sage-deep));
-  color:var(--white); font-family:'Nunito', sans-serif;
-  font-size:15px; font-weight:700; border:none; cursor:pointer;
-  box-shadow:0 4px 16px rgba(143,175,133,0.35);
-  transition:all 0.2s ease;
-}
-.btn-sage:active { transform:scale(0.98); }
 
-/* ─── JOURNAL ENTRIES ─── */
-.journal-entry {
-  background:var(--white); border-radius:var(--radius-sm);
-  padding:14px 16px; margin-bottom:10px;
-  box-shadow:0 2px 12px var(--shadow);
-  animation: cardIn 0.3s ease forwards;
+/* ─── ALERTS ─── */
+.alert-ok {
+  background:var(--sage-pale);
+  border-left:3px solid var(--sage);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+  padding:12px 14px; margin:8px 0;
 }
-.entry-date { font-size:11px; color:var(--text-light); font-weight:600; margin-bottom:4px; }
-.entry-text { font-size:14px; color:var(--text-soft); line-height:1.6; }
+.alert-warn {
+  background:var(--amber-pale);
+  border-left:3px solid var(--amber);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+  padding:12px 14px; margin:8px 0;
+}
+.alert-urg {
+  background:var(--blush-pale);
+  border-left:3px solid var(--blush-deep);
+  border-radius:0 var(--r-sm) var(--r-sm) 0;
+  padding:12px 14px; margin:8px 0;
+}
+.alert-title {
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;
+  margin-bottom:6px;
+}
+.alert-ok .alert-title { color:var(--sage); }
+.alert-warn .alert-title { color:var(--amber); }
+.alert-urg .alert-title { color:var(--blush-deep); }
+.alert-text { font-size:13px; line-height:1.6; color:var(--ink-60); }
+.alert-text b { color:var(--ink); }
 
-/* ─── CANVAS ─── */
-canvas {
-  border-radius:var(--radius-sm);
-  background:var(--white);
+/* ─── INFO LIST ─── */
+.info-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.info-item {
+  display:flex; gap:10px; align-items:flex-start;
+  font-size:13.5px; line-height:1.55; color:var(--ink-60);
 }
+.info-bullet {
+  flex-shrink:0; width:20px; height:20px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:#fff;
+  background: linear-gradient(135deg, var(--blush), var(--blush-deep));
+  margin-top:1px;
+}
+.info-item b { color:var(--ink); }
+
+/* ─── GROWTH PILLS ─── */
+.growth-row { display:flex; gap:10px; margin:4px 0; }
+.growth-pill {
+  flex:1; background:var(--surface-2); border-radius:var(--r-md);
+  padding:14px 12px; text-align:center;
+  border:1px solid var(--surface-border);
+}
+.growth-val {
+  font-family:var(--font-display);
+  font-size:22px; font-weight:700; color:var(--ink);
+}
+.growth-unit { font-size:10px; color:var(--ink-30); margin-top:2px; font-weight:500; }
+.growth-label { font-size:11px; color:var(--ink-60); font-weight:600; margin-top:4px; }
+
+/* ─── STATS ─── */
+.stat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:4px 0; }
+.stat-box {
+  background:var(--surface-2); border-radius:var(--r-md);
+  padding:12px 8px; text-align:center;
+  border:1px solid var(--surface-border);
+}
+.stat-val { font-family:var(--font-display); font-size:20px; color:var(--ink); font-weight:700; }
+.stat-lab { font-size:10px; color:var(--ink-30); font-weight:600; margin-top:2px; }
+
+/* ─── SECTION LABELS ─── */
+.section-label {
+  font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px;
+  color:var(--ink-30); padding:0 0 8px;
+}
+.section-big {
+  font-family:var(--font-display);
+  font-size:20px; font-weight:600; color:var(--ink); margin-bottom:12px;
+}
+.divider { height:1px; background:var(--surface-border); margin:14px 0; }
 
 /* ─── MILESTONE ─── */
 .milestone-row {
   display:flex; align-items:center; gap:12px;
-  background:var(--white); border-radius:var(--radius-sm);
-  padding:12px 16px; margin-bottom:8px;
-  box-shadow:0 2px 8px var(--shadow);
+  background:var(--surface); border-radius:var(--r-md);
+  padding:13px 15px; margin-bottom:8px;
+  border:1px solid var(--surface-border);
+  box-shadow:var(--shadow-sm);
 }
 .milestone-icon { font-size:22px; }
-.milestone-name { font-size:14px; font-weight:600; color:var(--text); flex:1; }
-.milestone-date { font-size:12px; color:var(--text-light); }
+.milestone-name { font-size:14px; font-weight:600; color:var(--ink); }
+.milestone-date { font-size:12px; color:var(--ink-30); margin-top:2px; }
 .milestone-check {
-  width:24px; height:24px; border-radius:50%;
-  background:var(--sage-pale); border:2px solid var(--sage);
+  width:26px; height:26px; border-radius:50%;
+  background:var(--surface-3); border:2px solid var(--surface-border);
   display:flex; align-items:center; justify-content:center;
-  font-size:12px; cursor:pointer;
+  font-size:12px; cursor:pointer; flex-shrink:0;
+  transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
 }
 .milestone-check.done {
-  background:var(--sage); color:var(--white); border-color:var(--sage-deep);
+  background:var(--sage); color:#fff; border-color:var(--sage);
+  transform:scale(1.1);
 }
 
-/* ─── SCREEN HIDDEN ─── */
-.screen { display:none; }
-.screen.active { display:block; }
+/* ─── JOURNAL ENTRIES ─── */
+.journal-entry {
+  background:var(--surface); border-radius:var(--r-md);
+  padding:14px 16px; margin-bottom:8px;
+  border:1px solid var(--surface-border);
+  box-shadow:var(--shadow-sm);
+  animation: cardIn 0.3s ease forwards;
+}
+.entry-date { font-size:11px; color:var(--ink-30); font-weight:600; margin-bottom:4px; letter-spacing:0.5px; }
+.entry-text { font-size:14px; color:var(--ink-60); line-height:1.6; }
 
-/* ─── RECIPE CARD ─── */
+/* ─── RECIPE ─── */
 .recipe {
-  background:linear-gradient(135deg, var(--beige), var(--beige-warm));
-  border-radius:var(--radius-sm); padding:14px 16px; margin:8px 0;
+  background:var(--surface-2); border-radius:var(--r-md);
+  padding:14px; margin:8px 0;
+  border:1px solid var(--surface-border);
 }
-.recipe-title { font-weight:700; font-size:14px; color:var(--text); margin-bottom:6px; }
-.recipe-text { font-size:13px; color:var(--text-soft); line-height:1.7; }
+.recipe-title { font-weight:700; font-size:14px; color:var(--ink); margin-bottom:5px; }
+.recipe-text { font-size:13px; color:var(--ink-60); line-height:1.65; }
 
-/* ─── DIVIDER ─── */
-.divider {
-  height:1px; background:linear-gradient(90deg, transparent, var(--beige-warm), transparent);
-  margin:16px 0;
-}
-
-/* ─── SCROLL HINT ─── */
-.scroll-hint {
-  text-align:center; padding:8px; color:var(--text-light);
-  font-size:12px; animation: bounce 2s infinite;
-}
-@keyframes bounce {
-  0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)}
+/* ─── VACCINE BADGE ─── */
+.vaccine-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--sage-pale); border:1.5px solid var(--sage);
+  border-radius:50px; padding:5px 12px; margin:3px 3px 3px 0;
+  font-size:12px; font-weight:600; color:var(--sage);
 }
 
-/* ─── SECTION COLLAPSIBLE ─── */
-.collapsible { cursor:pointer; }
+/* ─── URGENCY TABLE ─── */
+.urgency-row { display:flex; gap:8px; margin:5px 0; align-items:flex-start; }
+.urgency-tag {
+  flex-shrink:0; padding:4px 10px; border-radius:50px;
+  font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+}
+.tag-ok { background:var(--sage-pale); color:var(--sage); }
+.tag-med { background:var(--amber-pale); color:var(--amber); }
+.tag-urg { background:var(--blush-pale); color:var(--blush-deep); }
+.urgency-text { font-size:13px; color:var(--ink-60); line-height:1.5; flex:1; }
+
+/* ─── COLLAPSIBLE ─── */
 .collapsible-header {
   display:flex; justify-content:space-between; align-items:center;
-  padding:14px 20px; background:var(--white);
-  border-bottom:1px solid rgba(180,140,140,0.08);
+  padding:14px 18px; cursor:pointer;
 }
-.collapsible-arrow {
-  font-size:12px; color:var(--text-light);
-  transition:transform 0.2s;
-}
+.collapsible-arrow { font-size:12px; color:var(--ink-30); transition:transform 0.2s; }
 .collapsible.open .collapsible-arrow { transform:rotate(180deg); }
 .collapsible-content { overflow:hidden; max-height:0; transition:max-height 0.4s ease; }
 .collapsible.open .collapsible-content { max-height:2000px; }
 
-/* ─── URGENCY TABLE ─── */
-.urgency-row {
-  display:flex; gap:8px; margin:6px 0;
-  align-items:flex-start;
-}
-.urgency-tag {
-  flex-shrink:0; padding:4px 10px; border-radius:50px;
-  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
-}
-.tag-ok { background:var(--sage-pale); color:var(--sage-deep); }
-.tag-med { background:#FFF3E0; color:#E08030; }
-.tag-urg { background:#FDF0F3; color:var(--rose-deep); }
-.urgency-text { font-size:13px; color:var(--text-soft); line-height:1.5; flex:1; }
-
-/* ─── SCROLLBAR ─── */
-::-webkit-scrollbar { width:0; height:0; }
-
-/* ─── ANIMATIONS ─── */
-.fade-in { animation: cardIn 0.4s ease forwards; }
-
-/* ─── STAT ROW ─── */
-.stat-row {
-  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:4px 0;
-}
-.stat-box {
-  background:var(--beige); border-radius:var(--radius-sm);
-  padding:10px 8px; text-align:center;
-}
-.stat-val { font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--text); }
-.stat-lab { font-size:10px; color:var(--text-light); font-weight:600; margin-top:2px; }
-
-/* ─── PROGRESS BAR ─── */
-.prog-bar {
-  height:8px; background:var(--beige-warm); border-radius:50px; overflow:hidden;
-  margin:6px 0;
-}
-.prog-fill {
-  height:100%; border-radius:50px;
-  background:linear-gradient(90deg, var(--rose), var(--rose-deep));
-  transition:width 0.6s ease;
-}
+/* ─── PROG BAR ─── */
+.prog-bar { height:6px; background:var(--surface-3); border-radius:50px; overflow:hidden; margin:6px 0; }
+.prog-fill { height:100%; border-radius:50px; background:linear-gradient(90deg,var(--blush),var(--blush-deep)); transition:width 0.6s ease; }
 
 /* ─── AUTH ─── */
 #auth-screen {
   position:fixed; inset:0; z-index:2000;
-  background: linear-gradient(160deg, #FDF0F3 0%, #F5EDE3 50%, #EFF4EE 100%);
+  background:var(--ink);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:24px;
 }
 #auth-screen.hide { display:none; }
 .auth-card {
   width:100%; max-width:380px;
-  background:var(--white); border-radius:var(--radius);
+  background:var(--surface); border-radius:var(--r-lg);
   padding:32px 24px;
-  box-shadow:0 8px 40px rgba(180,140,140,0.18);
+  box-shadow: var(--shadow-lg);
 }
-.auth-flower { font-size:48px; text-align:center; margin-bottom:12px; }
+.auth-logo {
+  width:56px; height:56px; border-radius:16px;
+  background: linear-gradient(145deg,var(--blush),var(--blush-deep));
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; margin:0 auto 16px;
+}
 .auth-title {
-  font-family:'Cormorant Garamond', serif;
-  font-size:28px; font-weight:400; text-align:center;
-  color:var(--text); margin-bottom:4px;
+  font-family:var(--font-display);
+  font-size:26px; font-weight:700; text-align:center;
+  color:var(--ink); margin-bottom:3px; letter-spacing:-0.3px;
 }
 .auth-sub {
-  font-size:12px; color:var(--text-light); text-align:center;
-  letter-spacing:1.5px; text-transform:uppercase; margin-bottom:24px;
+  font-size:12px; color:var(--ink-30); text-align:center;
+  letter-spacing:2px; text-transform:uppercase; margin-bottom:24px;
 }
 .auth-tabs {
-  display:flex; background:var(--beige); border-radius:var(--radius-sm);
-  padding:4px; margin-bottom:20px;
+  display:flex; background:var(--surface-3);
+  border-radius:var(--r-md); padding:3px; margin-bottom:20px;
 }
 .auth-tab {
   flex:1; padding:8px; border:none; background:none; cursor:pointer;
-  font-family:'Nunito',sans-serif; font-size:13px; font-weight:600;
-  color:var(--text-soft); border-radius:calc(var(--radius-sm) - 4px);
+  font-family:var(--font-body); font-size:13px; font-weight:600;
+  color:var(--ink-60); border-radius:calc(var(--r-md)-3px);
   transition:all 0.2s;
 }
-.auth-tab.active { background:var(--white); color:var(--rose-deep); box-shadow:0 2px 8px var(--shadow); }
+.auth-tab.active { background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm); }
 .auth-error {
-  background:#FDF0F3; border-left:3px solid var(--rose-deep);
+  background:var(--blush-pale); border-left:3px solid var(--blush-deep);
   border-radius:0 8px 8px 0; padding:10px 12px;
-  font-size:13px; color:var(--rose-deep); margin-bottom:12px; display:none;
+  font-size:13px; color:var(--blush-deep); margin-bottom:12px; display:none;
 }
 .auth-success {
-  background:#EFF4EE; border-left:3px solid var(--sage-deep);
+  background:var(--sage-pale); border-left:3px solid var(--sage);
   border-radius:0 8px 8px 0; padding:10px 12px;
-  font-size:13px; color:var(--sage-deep); margin-bottom:12px; display:none;
+  font-size:13px; color:var(--sage); margin-bottom:12px; display:none;
 }
+
+/* ─── USER BAR ─── */
 .user-bar {
   position:fixed; top:0; right:0; z-index:200;
-  padding:8px 12px; display:flex; align-items:center; gap:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:8px;
 }
-.user-email {
-  font-size:11px; color:var(--text-light); max-width:120px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
+.user-email { font-size:11px; color:var(--ink-30); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .btn-logout {
-  padding:5px 10px; border-radius:50px;
-  border:1.5px solid var(--beige-warm); background:var(--white);
-  font-size:11px; font-weight:600; color:var(--text-light);
-  cursor:pointer;
+  padding:5px 12px; border-radius:50px;
+  border:1.5px solid var(--surface-border); background:var(--surface);
+  font-size:11px; font-weight:600; color:var(--ink-60); cursor:pointer;
+  font-family:var(--font-body);
 }
+
+/* ─── LOADING ─── */
 .loading-overlay {
   position:fixed; inset:0; z-index:3000;
-  background:rgba(253,250,246,0.9);
-  display:flex; align-items:center; justify-content:center;
-  font-size:32px;
+  background:var(--ink);
+  display:flex; align-items:center; justify-content:center; font-size:28px;
 }
 .loading-overlay.hide { display:none; }
+
+/* ════════════════════
+   DASHBOARD SCREEN
+════════════════════ */
+.dash-hero {
+  margin:12px 16px;
+  background: var(--ink);
+  border-radius:var(--r-lg);
+  padding:24px 20px;
+  color:#fff;
+  position:relative; overflow:hidden;
+}
+.dash-hero::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:160px; height:160px; border-radius:50%;
+  background:rgba(232,197,207,0.15); pointer-events:none;
+}
+.dash-hero::after {
+  content:''; position:absolute; bottom:-20px; left:40px;
+  width:80px; height:80px; border-radius:50%;
+  background:rgba(127,168,130,0.12); pointer-events:none;
+}
+.dash-bebe-name {
+  font-family:var(--font-display);
+  font-size:28px; font-weight:700; color:#fff;
+  letter-spacing:-0.5px;
+}
+.dash-bebe-sub {
+  font-size:12px; color:rgba(255,255,255,0.5);
+  margin-top:3px; letter-spacing:0.5px;
+}
+.dash-avatar {
+  width:52px; height:52px; border-radius:50%;
+  background:linear-gradient(135deg,var(--blush),var(--blush-deep));
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; overflow:hidden; flex-shrink:0;
+  border:2px solid rgba(255,255,255,0.2);
+}
+.dash-avatar img { width:100%; height:100%; object-fit:cover; }
+
+/* ─── QUICK STATS ROW ─── */
+.quick-stats {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; margin:10px 16px;
+}
+.quick-stat {
+  background:var(--surface); border-radius:var(--r-md);
+  padding:14px 10px; text-align:center;
+  border:1px solid var(--surface-border);
+  box-shadow:var(--shadow-sm);
+  cursor:pointer; transition:transform 0.15s;
+}
+.quick-stat:active { transform:scale(0.95); }
+.quick-stat-val {
+  font-family:var(--font-display);
+  font-size:22px; font-weight:700; color:var(--ink);
+  line-height:1;
+}
+.quick-stat-unit { font-size:10px; color:var(--ink-30); font-weight:600; margin-top:2px; }
+.quick-stat-label { font-size:10px; color:var(--ink-60); font-weight:600; margin-top:6px; }
+
+/* ════════════════════
+   TRACKER SCREEN
+════════════════════ */
+.tracker-section { margin:10px 16px; }
+.tracker-title {
+  font-family:var(--font-display);
+  font-size:18px; font-weight:600; color:var(--ink);
+  margin-bottom:10px; padding-left:2px;
+}
+
+/* ─── FEEDING TRACKER ─── */
+.feed-btns {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:8px; margin-bottom:12px;
+}
+.feed-btn {
+  padding:16px 8px; border-radius:var(--r-md);
+  background:var(--surface); border:2px solid var(--surface-border);
+  font-family:var(--font-body); font-size:12px; font-weight:700;
+  color:var(--ink-60); cursor:pointer; text-align:center;
+  transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.feed-btn.active {
+  background:var(--ink); color:#fff; border-color:var(--ink);
+  transform:scale(1.03);
+}
+.feed-btn-icon { font-size:22px; margin-bottom:4px; display:block; }
+
+/* ─── TIMER DISPLAY ─── */
+.timer-wrap {
+  background:var(--ink); border-radius:var(--r-lg);
+  padding:28px 20px; text-align:center; margin:10px 0;
+  position:relative; overflow:hidden;
+}
+.timer-wrap::before {
+  content:''; position:absolute; top:-20px; right:-20px;
+  width:100px; height:100px; border-radius:50%;
+  background:rgba(232,197,207,0.1);
+}
+.timer-display {
+  font-family:var(--font-display);
+  font-size:56px; font-weight:700; color:#fff;
+  letter-spacing:-2px; line-height:1;
+  font-variant-numeric: tabular-nums;
+}
+.timer-label {
+  font-size:12px; color:rgba(255,255,255,0.4);
+  margin-top:6px; letter-spacing:2px; text-transform:uppercase;
+}
+.timer-btn {
+  width:64px; height:64px; border-radius:50%;
+  background:linear-gradient(135deg,var(--blush),var(--blush-deep));
+  border:none; cursor:pointer; font-size:22px;
+  display:flex; align-items:center; justify-content:center;
+  margin:16px auto 0;
+  box-shadow:0 4px 20px var(--blush-glow);
+  transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.timer-btn:active { transform:scale(0.9); }
+.timer-running { animation: timerPulse 2s ease-in-out infinite; }
+@keyframes timerPulse { 0%,100%{box-shadow:0 4px 20px var(--blush-glow)} 50%{box-shadow:0 4px 32px rgba(201,134,154,0.5)} }
+
+/* ─── FEED LOG ─── */
+.feed-log-item {
+  display:flex; align-items:center; gap:12px;
+  background:var(--surface); border-radius:var(--r-md);
+  padding:12px 14px; margin-bottom:8px;
+  border:1px solid var(--surface-border);
+}
+.feed-log-icon { font-size:20px; }
+.feed-log-main { flex:1; }
+.feed-log-type { font-size:14px; font-weight:600; color:var(--ink); }
+.feed-log-meta { font-size:12px; color:var(--ink-30); margin-top:2px; }
+.feed-log-duration {
+  font-family:var(--font-display);
+  font-size:18px; font-weight:700; color:var(--ink);
+}
+
+/* ─── SLEEP TRACKER ─── */
+.sleep-btn-row { display:flex; gap:8px; }
+.sleep-big-btn {
+  flex:1; padding:18px 12px; border-radius:var(--r-lg);
+  border:none; cursor:pointer; text-align:center;
+  font-family:var(--font-body); font-weight:700;
+  transition:all 0.2s;
+}
+.sleep-btn-sleep {
+  background:var(--ink); color:#fff;
+  font-size:14px;
+}
+.sleep-btn-wake {
+  background:linear-gradient(135deg,#FFF3CD,#FFE082);
+  color:var(--ink); font-size:14px;
+}
+.sleep-big-btn:active { transform:scale(0.96); }
+.sleep-btn-icon { font-size:28px; display:block; margin-bottom:6px; }
+.sleep-active {
+  background:var(--ink); border-radius:var(--r-lg);
+  padding:20px; text-align:center; color:#fff; margin:10px 0;
+  animation: sleepPulse 4s ease-in-out infinite;
+}
+@keyframes sleepPulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
+.sleep-active-time {
+  font-family:var(--font-display);
+  font-size:42px; font-weight:700; color:#fff;
+  letter-spacing:-1px; font-variant-numeric:tabular-nums;
+}
+.sleep-active-label { font-size:12px; color:rgba(255,255,255,0.45); letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+
+/* ─── CHARTS PLACEHOLDER ─── */
+.chart-area {
+  background:var(--surface); border-radius:var(--r-lg);
+  padding:16px; margin:10px 0;
+  border:1px solid var(--surface-border);
+  min-height:160px;
+}
+canvas { border-radius:var(--r-sm); }
+
+/* ─── PHOTO GRID ─── */
+.photo-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:3px; margin:0;
+}
+.photo-thumb {
+  aspect-ratio:1; overflow:hidden; position:relative;
+  cursor:pointer;
+}
+.photo-thumb img { width:100%; height:100%; object-fit:cover; }
+.photo-thumb-empty {
+  aspect-ratio:1; background:var(--surface-3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; color:var(--ink-30); cursor:pointer;
+}
+.photo-add-btn {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; padding:14px; border-radius:var(--r-md);
+  background:var(--surface-2); border:2px dashed var(--surface-border);
+  color:var(--ink-60); font-family:var(--font-body); font-size:14px; font-weight:600;
+  cursor:pointer; transition:all 0.2s; margin:10px 0;
+}
+.photo-add-btn:active { background:var(--surface-3); }
+
+/* ─── PROFILE PHOTO ─── */
+.profile-photo-wrap {
+  width:80px; height:80px; border-radius:50%; overflow:hidden;
+  background:var(--surface-3); cursor:pointer; position:relative;
+  border:3px solid var(--surface);
+  box-shadow:var(--shadow-md);
+}
+.profile-photo-wrap img { width:100%; height:100%; object-fit:cover; }
+.profile-photo-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,0.4);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; opacity:0; transition:opacity 0.2s;
+}
+.profile-photo-wrap:hover .profile-photo-overlay,
+.profile-photo-wrap:active .profile-photo-overlay { opacity:1; }
+
+/* ─── LIGHTBOX ─── */
+.lightbox {
+  position:fixed; inset:0; z-index:500;
+  background:rgba(0,0,0,0.95);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+}
+.lightbox img { max-width:100%; max-height:80vh; border-radius:var(--r-sm); object-fit:contain; }
+.lightbox-close {
+  position:absolute; top:20px; right:20px;
+  width:40px; height:40px; border-radius:50%;
+  background:rgba(255,255,255,0.15); border:none; color:#fff;
+  font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position:fixed; inset:0; z-index:400;
+  background:rgba(26,18,24,0.6); backdrop-filter:blur(8px);
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.modal-overlay.hide { display:none; }
+.modal-sheet {
+  width:100%; max-width:500px;
+  background:var(--surface); border-radius:var(--r-lg) var(--r-lg) 0 0;
+  padding:20px 20px calc(20px + var(--safe-bottom));
+  animation: sheetUp 0.35s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle {
+  width:36px; height:4px; border-radius:2px;
+  background:var(--surface-border); margin:0 auto 20px;
+}
+.modal-title {
+  font-family:var(--font-display);
+  font-size:20px; font-weight:600; color:var(--ink);
+  margin-bottom:16px;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:0; height:0; }
+
+/* ─── FADE ─── */
+.fade-in { animation: cardIn 0.4s ease forwards; }
+
 </style>
 </head>
 <body>
@@ -531,9 +817,9 @@ canvas {
 <!-- AUTH SCREEN -->
 <div id="auth-screen" class="hide">
   <div class="auth-card">
-    <div class="auth-flower">🌸</div>
+    <div class="auth-logo">🌸</div>
     <div class="auth-title">Mon Bébé</div>
-    <div class="auth-sub">Guide de votre sage-femme</div>
+    <div class="auth-sub">Guide sage-femme</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Créer un compte</button>
@@ -564,85 +850,161 @@ canvas {
 
 <!-- SPLASH -->
 <div id="splash" style="display:none">
-  <div class="splash-flower">🌸</div>
+  <div class="splash-logo">🌸</div>
   <div class="splash-title">Mon Bébé</div>
-  <div class="splash-sub">Guide de votre sage-femme</div>
+  <div class="splash-sub">Guide sage-femme</div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div class="modal-overlay hide" id="modalOverlay">
+  <div class="modal-sheet" id="modalSheet">
+    <div class="modal-handle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" style="display:none" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
 </div>
 
 <!-- APP -->
 <div id="app">
 
-  <!-- ═══════════════════════════════════════
-       SCREEN 1 : MOIS PAR MOIS
-  ══════════════════════════════════════════ -->
-  <div class="screen active" id="screen-mois">
+  <!-- ══ SCREEN: DASHBOARD ══ -->
+  <div class="screen active" id="screen-dash">
+    <div style="height:8px"></div>
+
+    <!-- Hero bébé -->
+    <div class="dash-hero" id="dashHero">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="dash-bebe-name" id="dashBebeNom">Bonjour 🌸</div>
+          <div class="dash-bebe-sub" id="dashBebeAge">Configurez le profil de votre bébé</div>
+        </div>
+        <div class="dash-avatar" id="dashAvatarBtn" onclick="openProfileModal()" style="cursor:pointer">
+          <span id="dashAvatarEmoji">👶</span>
+          <img id="dashAvatarImg" src="" alt="" style="display:none">
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button onclick="openTrackerFeed()" style="flex:1;padding:10px;border-radius:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer">🍼 Tétée</button>
+        <button onclick="openTrackerSleep()" style="flex:1;padding:10px;border-radius:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer">😴 Dodo</button>
+        <button onclick="showScreen('journal',document.querySelectorAll('.nav-btn')[4])" style="flex:1;padding:10px;border-radius:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);color:#fff;font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer">📝 Note</button>
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="quick-stats" id="dashStats">
+      <div class="quick-stat" onclick="showScreen('tracker',document.querySelectorAll('.nav-btn')[1])">
+        <div class="quick-stat-val" id="statTetees">–</div>
+        <div class="quick-stat-unit">aujourd'hui</div>
+        <div class="quick-stat-label">Tétées</div>
+      </div>
+      <div class="quick-stat" onclick="showScreen('tracker',document.querySelectorAll('.nav-btn')[1])">
+        <div class="quick-stat-val" id="statSommeil">–</div>
+        <div class="quick-stat-unit">heures</div>
+        <div class="quick-stat-label">Sommeil</div>
+      </div>
+      <div class="quick-stat" onclick="showScreen('journal',document.querySelectorAll('.nav-btn')[4])">
+        <div class="quick-stat-val" id="statPoids">–</div>
+        <div class="quick-stat-unit">kg</div>
+        <div class="quick-stat-label">Dernier poids</div>
+      </div>
+    </div>
+
+    <!-- Section photos du mois -->
+    <div style="margin:14px 16px 4px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--ink)">Photos du mois</div>
+      <button onclick="showScreen('photos',document.querySelectorAll('.nav-btn')[2])" style="font-size:12px;font-weight:600;color:var(--blush-deep);background:none;border:none;cursor:pointer">Voir tout →</button>
+    </div>
+    <div class="photo-grid" id="dashPhotoGrid" style="margin:0 16px;border-radius:var(--r-md);overflow:hidden">
+      <div class="photo-thumb-empty" onclick="showScreen('photos',document.querySelectorAll('.nav-btn')[2])">📷</div>
+      <div class="photo-thumb-empty" onclick="showScreen('photos',document.querySelectorAll('.nav-btn')[2])">+</div>
+      <div class="photo-thumb-empty" onclick="showScreen('photos',document.querySelectorAll('.nav-btn')[2])">+</div>
+    </div>
+
+    <!-- Conseil du jour -->
+    <div class="sf-message" style="margin-top:12px" id="dashConseil">
+      <span class="sf-avatar">👩‍⚕️</span>
+      <div class="sf-name">Conseil de votre sage-femme</div>
+      <div class="sf-text" id="dashConseilText">Chaque bébé est unique. Faites confiance à votre instinct — vous le connaissez mieux que quiconque.</div>
+    </div>
+
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- ══ SCREEN: TRACKER ══ -->
+  <div class="screen" id="screen-tracker">
     <div class="page-header">
+      <div class="page-eyebrow">Suivi quotidien</div>
+      <div class="page-title">Tracker</div>
+      <div class="page-subtitle">Tétées, sommeil, données clés</div>
+    </div>
+
+    <div style="padding:0 0 8px">
+      <div class="inner-tabs" style="margin:12px 16px 0">
+        <button class="inner-tab active" id="trkTabFeed" onclick="showTrackerTab('feed')">🍼 Tétées</button>
+        <button class="inner-tab" id="trkTabSleep" onclick="showTrackerTab('sleep')">😴 Sommeil</button>
+        <button class="inner-tab" id="trkTabStats" onclick="showTrackerTab('stats')">📊 Stats</button>
+      </div>
+      <div id="trackerContent"></div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: PHOTOS ══ -->
+  <div class="screen" id="screen-photos">
+    <div class="page-header">
+      <div class="page-eyebrow">Souvenirs</div>
+      <div class="page-title">Album 📸</div>
+      <div class="page-subtitle">Les moments précieux, mois par mois</div>
+    </div>
+    <div id="photosContent" style="padding:12px 0"></div>
+  </div>
+
+  <!-- ══ SCREEN: MOIS PAR MOIS ══ -->
+  <div class="screen" id="screen-mois">
+    <div class="page-header">
+      <div class="page-eyebrow">Guide médical</div>
       <div class="page-title">🌸 Mois par mois</div>
       <div class="page-subtitle">Votre guide personnalisé, mois après mois</div>
     </div>
-
     <div class="month-strip" id="monthStrip"></div>
-
     <div id="monthContent"></div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       SCREEN 2 : ALIMENTATION
-  ══════════════════════════════════════════ -->
+  <!-- ══ SCREEN: ALIMENTATION ══ -->
   <div class="screen" id="screen-alim">
     <div class="page-header">
+      <div class="page-eyebrow">Nutrition</div>
       <div class="page-title">🍼 Alimentation</div>
-      <div class="page-subtitle">Allaitement, biberon, diversification — tout y est</div>
+      <div class="page-subtitle">Allaitement, biberon, diversification</div>
     </div>
-
-    <div style="padding:0 0 8px;">
-      <div class="inner-tabs" style="margin:12px 16px 0;">
-        <button class="inner-tab active" onclick="showAlimTab('allait')">Allaitement</button>
+    <div style="padding:0 0 8px">
+      <div class="inner-tabs" style="margin:12px 16px 0">
+        <button class="inner-tab active" onclick="showAlimTab('allait')">Allait.</button>
         <button class="inner-tab" onclick="showAlimTab('biberon')">Biberon</button>
-        <button class="inner-tab" onclick="showAlimTab('divers')">Diversification</button>
+        <button class="inner-tab" onclick="showAlimTab('divers')">Divers.</button>
         <button class="inner-tab" onclick="showAlimTab('recettes')">Recettes</button>
       </div>
       <div id="alimContent"></div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-       SCREEN 3 : SOMMEIL
-  ══════════════════════════════════════════ -->
-  <div class="screen" id="screen-sommeil">
-    <div class="page-header">
-      <div class="page-title">😴 Sommeil</div>
-      <div class="page-subtitle">Des nuits (un peu) plus douces — je vous guide</div>
-    </div>
-    <div id="sommeilContent"></div>
-  </div>
-
-  <!-- ═══════════════════════════════════════
-       SCREEN 4 : SANTÉ & URGENCES
-  ══════════════════════════════════════════ -->
-  <div class="screen" id="screen-sante">
-    <div class="page-header">
-      <div class="page-title">🏥 Santé & Urgences</div>
-      <div class="page-subtitle">Calme, informée et prête — vous avez tout ce qu'il faut</div>
-    </div>
-    <div id="santeContent"></div>
-  </div>
-
-  <!-- ═══════════════════════════════════════
-       SCREEN 5 : JOURNAL
-  ══════════════════════════════════════════ -->
+  <!-- ══ SCREEN: JOURNAL ══ -->
   <div class="screen" id="screen-journal">
     <div class="page-header">
-      <div class="page-title">📝 Journal de Bébé</div>
+      <div class="page-eyebrow">Carnet de bébé</div>
+      <div class="page-title">📝 Journal</div>
       <div class="page-subtitle">Chaque moment précieux, gardé pour toujours</div>
     </div>
-
-    <div style="padding:0 0 8px;">
-      <div class="inner-tabs" style="margin:12px 16px 0;">
+    <div style="padding:0 0 8px">
+      <div class="inner-tabs" style="margin:12px 16px 0">
         <button class="inner-tab active" onclick="showJournalTab('notes')">Notes</button>
-        <button class="inner-tab" onclick="showJournalTab('croissance')">Croissance</button>
+        <button class="inner-tab" onclick="showJournalTab('croissance')">Courbes</button>
         <button class="inner-tab" onclick="showJournalTab('vaccins')">Vaccins</button>
-        <button class="inner-tab" onclick="showJournalTab('premiers')">Premières fois</button>
+        <button class="inner-tab" onclick="showJournalTab('premiers')">Premières</button>
       </div>
       <div id="journalContent"></div>
     </div>
@@ -650,38 +1012,727 @@ canvas {
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-btn active" onclick="showScreen('mois',this)">
+    <button class="nav-btn active" onclick="showScreen('dash',this)">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('tracker',this);initTracker()">
+      <div class="nav-icon">⏱️</div>
+      <div class="nav-label">Tracker</div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('photos',this);renderPhotos()">
+      <div class="nav-icon">📸</div>
+      <div class="nav-label">Album</div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('mois',this)">
       <div class="nav-icon">🌸</div>
-      <div class="nav-label">Mois par mois</div>
-      <div class="nav-dot"></div>
+      <div class="nav-label">Guide</div>
     </button>
-    <button class="nav-btn" onclick="showScreen('alim',this)">
-      <div class="nav-icon">🍼</div>
-      <div class="nav-label">Alimentation</div>
-      <div class="nav-dot"></div>
-    </button>
-    <button class="nav-btn" onclick="showScreen('sommeil',this)">
-      <div class="nav-icon">😴</div>
-      <div class="nav-label">Sommeil</div>
-      <div class="nav-dot"></div>
-    </button>
-    <button class="nav-btn" onclick="showScreen('sante',this)">
-      <div class="nav-icon">🏥</div>
-      <div class="nav-label">Santé</div>
-      <div class="nav-dot"></div>
-    </button>
-    <button class="nav-btn" onclick="showScreen('journal',this)">
+    <button class="nav-btn" onclick="showScreen('journal',this);if(!window._journalInit){initJournal();window._journalInit=true;}">
       <div class="nav-icon">📝</div>
       <div class="nav-label">Journal</div>
-      <div class="nav-dot"></div>
     </button>
   </nav>
 </div>
 
 <script>
 // ══════════════════════════════════════════════════════════
-//  DATA — MOIS PAR MOIS (sage-femme content)
+//  SUPABASE + AUTH
 // ══════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://rzevifmlhmfhtdncgvoo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_joZrgkNR1kfpnfKdmPQmwQ_4R71mfay';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+const _cache = {};
+
+async function dbGet(table) {
+  if(!currentUser) return null;
+  const {data,error} = await sb.from(table).select('data').eq('user_id',currentUser.id).single();
+  if(error||!data) return null;
+  return data.data;
+}
+async function dbSet(table,value) {
+  if(!currentUser) return;
+  await sb.from(table).upsert({user_id:currentUser.id,data:value},{onConflict:'user_id'});
+}
+async function getItem(key) {
+  if(_cache[key]!==undefined) return _cache[key];
+  const val = await dbGet(key);
+  _cache[key]=val;
+  return val;
+}
+async function setItem(key,value) {
+  _cache[key]=value;
+  await dbSet(key,value);
+}
+async function migrateLocalStorage() {
+  const keys=['bebe_notes','bebe_growth','bebe_vaccins','bebe_milestones','bebe_profile','bebe_feeds','bebe_sleeps','bebe_photos'];
+  for(const key of keys) {
+    const local=localStorage.getItem(key);
+    if(!local) continue;
+    const existing=await dbGet(key);
+    if(!existing) await dbSet(key,JSON.parse(local));
+    localStorage.removeItem(key);
+  }
+}
+
+// ── Auth UI ──
+let authMode='login';
+function switchAuthTab(mode) {
+  authMode=mode;
+  document.getElementById('tabLogin').classList.toggle('active',mode==='login');
+  document.getElementById('tabSignup').classList.toggle('active',mode==='signup');
+  document.getElementById('authBtn').textContent=mode==='login'?'Se connecter':'Créer mon compte';
+  document.getElementById('authPrenom').style.display=mode==='signup'?'block':'none';
+  document.getElementById('authError').style.display='none';
+  document.getElementById('authSuccess').style.display='none';
+}
+function showAuthError(msg){const el=document.getElementById('authError');el.textContent=msg;el.style.display='block';document.getElementById('authSuccess').style.display='none';}
+function showAuthSuccess(msg){const el=document.getElementById('authSuccess');el.textContent=msg;el.style.display='block';document.getElementById('authError').style.display='none';}
+
+document.getElementById('authBtn').addEventListener('click',async()=>{
+  const email=document.getElementById('authEmail').value.trim();
+  const password=document.getElementById('authPassword').value;
+  if(!email||!password){showAuthError('Veuillez remplir tous les champs.');return;}
+  document.getElementById('authBtn').textContent='…';
+  if(authMode==='login'){
+    const{error}=await sb.auth.signInWithPassword({email,password});
+    if(error){showAuthError('Email ou mot de passe incorrect.');document.getElementById('authBtn').textContent='Se connecter';}
+  } else {
+    const prenom=document.getElementById('authPrenomInput').value.trim();
+    const{error}=await sb.auth.signUp({email,password,options:{data:{prenom}}});
+    if(error){showAuthError(error.message);document.getElementById('authBtn').textContent='Créer mon compte';}
+    else{showAuthSuccess('Compte créé ! Vérifiez votre email.');document.getElementById('authBtn').textContent='Créer mon compte';}
+  }
+});
+document.getElementById('btnLogout').addEventListener('click',async()=>{ await sb.auth.signOut(); });
+
+async function launchApp(user) {
+  currentUser=user;
+  document.getElementById('auth-screen').classList.add('hide');
+  document.getElementById('userBar').style.display='flex';
+  document.getElementById('userEmail').textContent=user.email;
+  const splash=document.getElementById('splash');
+  splash.style.display='flex';
+  await migrateLocalStorage();
+  await loadDashboard();
+  setTimeout(()=>{
+    splash.classList.add('hide');
+    setTimeout(()=>{ splash.style.display='none'; document.getElementById('app').classList.add('visible'); initMonths(); },900);
+  },1800);
+}
+
+window.addEventListener('load',async()=>{
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    document.getElementById('loadingOverlay').classList.add('hide');
+    if(session?.user){ if(!currentUser) await launchApp(session.user); }
+    else { currentUser=null; document.getElementById('auth-screen').classList.remove('hide'); document.getElementById('userBar').style.display='none'; document.getElementById('app').classList.remove('visible'); }
+  });
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){ document.getElementById('loadingOverlay').classList.add('hide'); document.getElementById('auth-screen').classList.remove('hide'); }
+});
+
+// ══════════════════════════════════════════════════════════
+//  MODAL SYSTEM
+// ══════════════════════════════════════════════════════════
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('modalOverlay').classList.remove('hide');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.add('hide'); }
+document.getElementById('modalOverlay').addEventListener('click',function(e){
+  if(e.target===this) closeModal();
+});
+
+// ══════════════════════════════════════════════════════════
+//  PROFIL BÉBÉ
+// ══════════════════════════════════════════════════════════
+async function openProfileModal() {
+  const profile = (await getItem('bebe_profile')) || {};
+  openModal(`
+    <div class="modal-title">Profil de bébé 👶</div>
+
+    <!-- Photo de profil -->
+    <div style="display:flex;justify-content:center;margin-bottom:16px">
+      <div class="profile-photo-wrap" onclick="document.getElementById('profilePhotoInput').click()">
+        ${profile.photoUrl ? `<img src="${profile.photoUrl}" alt="">` : '<span style="font-size:32px;display:flex;align-items:center;justify-content:center;height:100%">👶</span>'}
+        <div class="profile-photo-overlay">📷</div>
+      </div>
+      <input type="file" id="profilePhotoInput" accept="image/*" style="display:none" onchange="handleProfilePhoto(this)">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Prénom de bébé</label>
+      <input type="text" class="input-field" id="profileNom" placeholder="Emma" value="${profile.nom||''}">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Date de naissance</label>
+      <input type="date" class="input-field" id="profileNaissance" value="${profile.naissance||''}">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Sexe</label>
+      <select class="input-field" id="profileSexe">
+        <option value="" ${!profile.sexe?'selected':''}>Non précisé</option>
+        <option value="f" ${profile.sexe==='f'?'selected':''}>Fille 👧</option>
+        <option value="m" ${profile.sexe==='m'?'selected':''}>Garçon 👦</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveProfile()">Enregistrer</button>
+    <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="closeModal()">Annuler</button>
+  `);
+}
+
+let _profilePhotoUrl = null;
+function handleProfilePhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024) { alert('Photo trop lourde (max 2 Mo)'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _profilePhotoUrl = e.target.result;
+    const wrap = document.querySelector('.profile-photo-wrap');
+    if(wrap) wrap.innerHTML = `<img src="${_profilePhotoUrl}" alt=""><div class="profile-photo-overlay">📷</div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProfile() {
+  const nom = document.getElementById('profileNom').value.trim();
+  const naissance = document.getElementById('profileNaissance').value;
+  const sexe = document.getElementById('profileSexe').value;
+  const profile = (await getItem('bebe_profile')) || {};
+  profile.nom = nom;
+  profile.naissance = naissance;
+  profile.sexe = sexe;
+  if(_profilePhotoUrl) { profile.photoUrl = _profilePhotoUrl; _profilePhotoUrl=null; }
+  await setItem('bebe_profile', profile);
+  closeModal();
+  await updateDashboard();
+}
+
+function calcAge(naissance) {
+  if(!naissance) return null;
+  const born = new Date(naissance);
+  const now = new Date();
+  const diffMs = now - born;
+  const days = Math.floor(diffMs / 86400000);
+  const months = Math.floor(days / 30.44);
+  const weeks = Math.floor(days / 7);
+  if(months >= 2) return `${months} mois`;
+  if(weeks >= 2) return `${weeks} semaines`;
+  return `${days} jour${days>1?'s':''}`;
+}
+
+async function loadDashboard() {
+  await updateDashboard();
+}
+
+async function updateDashboard() {
+  const profile = (await getItem('bebe_profile')) || {};
+  const nom = profile.nom || 'Bébé';
+  const age = calcAge(profile.naissance);
+
+  document.getElementById('dashBebeNom').textContent = `Bonjour, ${nom} 🌸`;
+  document.getElementById('dashBebeAge').textContent = age ? `${age} — Vous faites du super boulot 💕` : 'Configurez le profil de votre bébé';
+
+  // Avatar
+  const avatarImg = document.getElementById('dashAvatarImg');
+  const avatarEmoji = document.getElementById('dashAvatarEmoji');
+  if(profile.photoUrl) {
+    avatarImg.src = profile.photoUrl; avatarImg.style.display='block'; avatarEmoji.style.display='none';
+  } else {
+    avatarEmoji.textContent = profile.sexe==='f' ? '👧' : profile.sexe==='m' ? '👦' : '👶';
+    avatarImg.style.display='none'; avatarEmoji.style.display='block';
+  }
+
+  // Stats
+  const today = new Date().toLocaleDateString('fr-FR');
+  const feeds = (await getItem('bebe_feeds')) || [];
+  const todayFeeds = feeds.filter(f => f.date === today);
+  document.getElementById('statTetees').textContent = todayFeeds.length;
+
+  const sleeps = (await getItem('bebe_sleeps')) || [];
+  const todaySleeps = sleeps.filter(s => s.date === today && s.duration);
+  const totalSleepMin = todaySleeps.reduce((acc,s) => acc + (s.duration||0), 0);
+  document.getElementById('statSommeil').textContent = totalSleepMin > 0 ? (totalSleepMin/60).toFixed(1) : '–';
+
+  const growth = (await getItem('bebe_growth')) || [];
+  const lastWeight = growth.length > 0 ? growth[growth.length-1].poids : null;
+  document.getElementById('statPoids').textContent = lastWeight || '–';
+
+  // Photos aperçu
+  const photos = (await getItem('bebe_photos')) || [];
+  const currentMonth = new Date().toISOString().slice(0,7);
+  const monthPhotos = photos.filter(p => p.month === currentMonth).slice(0,3);
+  const grid = document.getElementById('dashPhotoGrid');
+  if(monthPhotos.length > 0) {
+    grid.innerHTML = monthPhotos.map(p => `<div class="photo-thumb"><img src="${p.url}" alt="" onclick="openLightbox('${p.url}')"></div>`).join('') +
+      (monthPhotos.length < 3 ? '<div class="photo-thumb-empty" onclick="showScreen(\'photos\',document.querySelectorAll(\'.nav-btn\')[2]);renderPhotos()">+</div>'.repeat(3-monthPhotos.length) : '');
+  }
+
+  // Conseil aléatoire
+  const conseils = [
+    "Chaque bébé est unique. Faites confiance à votre instinct — vous le connaissez mieux que quiconque.",
+    "Le portage stimule le système vestibulaire et rassure bébé. 2-3h/jour de portage peut réduire les pleurs de 43%.",
+    "Parlez, chantez, lisez à votre bébé dès le premier jour. Son cerveau absorbe chaque mot.",
+    "La peau à peau n'a pas de date de péremption. Même à 6 mois, c'est bénéfique pour les deux.",
+    "Votre sommeil compte autant que celui de bébé. Reposez-vous sans culpabilité.",
+    "Un bébé qui pleure n'est pas un bébé gâté. Répondre à ses besoins construit sa sécurité affective.",
+  ];
+  document.getElementById('dashConseilText').textContent = conseils[Math.floor(Math.random()*conseils.length)];
+}
+
+// ══════════════════════════════════════════════════════════
+//  LIGHTBOX
+// ══════════════════════════════════════════════════════════
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() { document.getElementById('lightbox').style.display='none'; }
+
+// ══════════════════════════════════════════════════════════
+//  TRACKER — TÉTÉES
+// ══════════════════════════════════════════════════════════
+let activeTimer = { running:false, startTime:null, type:'gauche', interval:null };
+
+function initTracker() {
+  if(!window._trackerInit) { showTrackerTab('feed'); window._trackerInit=true; }
+}
+function openTrackerFeed() { showScreen('tracker',document.querySelectorAll('.nav-btn')[1]); initTracker(); showTrackerTab('feed'); }
+function openTrackerSleep() { showScreen('tracker',document.querySelectorAll('.nav-btn')[1]); initTracker(); showTrackerTab('sleep'); }
+
+function showTrackerTab(tab) {
+  ['feed','sleep','stats'].forEach(t => {
+    const el = document.getElementById('trkTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el) el.classList.toggle('active', t===tab);
+  });
+  if(tab==='feed') renderFeedTracker();
+  else if(tab==='sleep') renderSleepTracker();
+  else if(tab==='stats') renderStatsTracker();
+}
+
+async function renderFeedTracker() {
+  const feeds = (await getItem('bebe_feeds')) || [];
+  const today = new Date().toLocaleDateString('fr-FR');
+  const todayFeeds = feeds.filter(f=>f.date===today).reverse();
+
+  document.getElementById('trackerContent').innerHTML = `
+    <div style="padding:0 16px">
+      <div style="margin:12px 0 10px">
+        <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:10px">Type de tétée</div>
+        <div class="feed-btns">
+          <button class="feed-btn ${activeTimer.type==='gauche'?'active':''}" onclick="setFeedType('gauche')">
+            <span class="feed-btn-icon">👈</span>Sein gauche
+          </button>
+          <button class="feed-btn ${activeTimer.type==='droite'?'active':''}" onclick="setFeedType('droite')">
+            <span class="feed-btn-icon">👉</span>Sein droit
+          </button>
+          <button class="feed-btn ${activeTimer.type==='biberon'?'active':''}" onclick="setFeedType('biberon')">
+            <span class="feed-btn-icon">🍼</span>Biberon
+          </button>
+        </div>
+      </div>
+
+      <div class="timer-wrap" id="timerWrap">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-label" id="timerLabel">${activeTimer.type==='biberon'?'Biberon':'Sein '+(activeTimer.type==='gauche'?'gauche':'droit')}</div>
+        <button class="timer-btn ${activeTimer.running?'timer-running':''}" id="timerBtn" onclick="toggleTimer()">
+          ${activeTimer.running ? '⏹️' : '▶️'}
+        </button>
+        ${activeTimer.running ? `<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:12px;letter-spacing:1px">Appuyez pour arrêter & enregistrer</div>` : ''}
+      </div>
+
+      ${activeTimer.type!=='biberon' ? '' : `
+      <div class="card" style="margin:10px 0">
+        <div class="card-body">
+          <div class="input-group" style="margin-bottom:0">
+            <label class="input-label">Quantité (ml) — optionnel</label>
+            <input type="number" class="input-field" id="biberonMl" placeholder="ex: 120" min="0" max="300">
+          </div>
+        </div>
+      </div>`}
+
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin:14px 0 8px">Aujourd'hui (${todayFeeds.length})</div>
+      ${todayFeeds.length===0 ? `<div style="text-align:center;padding:20px;color:var(--ink-30);font-size:13px">Aucune tétée enregistrée aujourd'hui</div>` :
+        todayFeeds.map((f,i)=>`
+        <div class="feed-log-item">
+          <div class="feed-log-icon">${f.type==='biberon'?'🍼':f.type==='gauche'?'👈':'👉'}</div>
+          <div class="feed-log-main">
+            <div class="feed-log-type">${f.type==='biberon'?'Biberon'+(f.ml?' — '+f.ml+'ml':''):'Sein '+(f.type==='gauche'?'gauche':'droit')}</div>
+            <div class="feed-log-meta">${f.time}${f.duration?' · '+formatDuration(f.duration):''}</div>
+          </div>
+          <button onclick="deleteFeed(${feeds.length-1-i})" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-30);padding:4px">🗑</button>
+        </div>`).join('')
+      }
+    </div>
+  `;
+
+  // Restore timer display if running
+  if(activeTimer.running) updateTimerDisplay();
+}
+
+function setFeedType(type) {
+  if(activeTimer.running) return; // Can't switch while running
+  activeTimer.type = type;
+  renderFeedTracker();
+}
+
+function formatDuration(seconds) {
+  if(!seconds || seconds < 0) return '';
+  const m = Math.floor(seconds/60);
+  const s = Math.floor(seconds%60);
+  if(m===0) return `${s}s`;
+  return `${m}min${s>0?' '+s+'s':''}`;
+}
+
+function updateTimerDisplay() {
+  if(!activeTimer.startTime) return;
+  const elapsed = Math.floor((Date.now() - activeTimer.startTime) / 1000);
+  const m = Math.floor(elapsed/60);
+  const s = elapsed%60;
+  const display = document.getElementById('timerDisplay');
+  if(display) display.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function toggleTimer() {
+  if(activeTimer.running) {
+    // STOP
+    clearInterval(activeTimer.interval);
+    const elapsed = Math.floor((Date.now() - activeTimer.startTime) / 1000);
+    activeTimer.running = false;
+    saveFeedEntry(activeTimer.type, elapsed);
+  } else {
+    // START
+    activeTimer.startTime = Date.now();
+    activeTimer.running = true;
+    activeTimer.interval = setInterval(updateTimerDisplay, 1000);
+    renderFeedTracker();
+  }
+}
+
+async function saveFeedEntry(type, durationSeconds) {
+  const feeds = (await getItem('bebe_feeds')) || [];
+  const ml = type==='biberon' ? (parseInt(document.getElementById('biberonMl')?.value)||null) : null;
+  feeds.push({
+    type, duration: durationSeconds, ml,
+    date: new Date().toLocaleDateString('fr-FR'),
+    time: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+    ts: Date.now()
+  });
+  await setItem('bebe_feeds', feeds);
+  activeTimer.startTime = null;
+  renderFeedTracker();
+  updateDashboard();
+}
+
+async function deleteFeed(idx) {
+  const feeds = (await getItem('bebe_feeds')) || [];
+  feeds.splice(idx,1);
+  await setItem('bebe_feeds', feeds);
+  renderFeedTracker();
+  updateDashboard();
+}
+
+// ══════════════════════════════════════════════════════════
+//  TRACKER — SOMMEIL
+// ══════════════════════════════════════════════════════════
+let sleepTimer = { running:false, startTime:null, interval:null };
+
+async function renderSleepTracker() {
+  const sleeps = (await getItem('bebe_sleeps')) || [];
+  const today = new Date().toLocaleDateString('fr-FR');
+  const todaySleeps = sleeps.filter(s=>s.date===today && s.duration).reverse();
+
+  document.getElementById('trackerContent').innerHTML = `
+    <div style="padding:0 16px">
+      ${sleepTimer.running ? `
+        <div class="sleep-active">
+          <div style="font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">😴 Bébé dort depuis</div>
+          <div class="sleep-active-time" id="sleepDisplay">00:00</div>
+          <button onclick="stopSleep()" style="margin-top:16px;padding:12px 28px;border-radius:50px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);color:#fff;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer">
+            ☀️ Bébé est réveillé
+          </button>
+        </div>
+      ` : `
+        <div style="margin:12px 0">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:10px">Démarrer une période de sommeil</div>
+          <div class="sleep-btn-row">
+            <button class="sleep-big-btn sleep-btn-sleep" onclick="startSleep()">
+              <span class="sleep-btn-icon">🌙</span>
+              Dodo commence
+            </button>
+            <div style="padding:12px;border-radius:var(--r-lg);background:var(--surface-2);flex:1;text-align:center;border:1px solid var(--surface-border)">
+              <div style="font-size:10px;color:var(--ink-30);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Ou saisie manuelle</div>
+              <button onclick="openManualSleep()" style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--blush-deep);font-family:var(--font-body)">+ Ajouter manuellement</button>
+            </div>
+          </div>
+        </div>
+      `}
+
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin:14px 0 8px">
+        Sommeil aujourd'hui · ${formatDuration(todaySleeps.reduce((a,s)=>a+(s.duration||0),0))}
+      </div>
+      ${todaySleeps.length===0 ? `<div style="text-align:center;padding:20px;color:var(--ink-30);font-size:13px">Aucune période enregistrée</div>` :
+        todaySleeps.map((s,i)=>`
+        <div class="feed-log-item">
+          <div class="feed-log-icon">😴</div>
+          <div class="feed-log-main">
+            <div class="feed-log-type">${formatDuration(s.duration)} de sommeil</div>
+            <div class="feed-log-meta">${s.startTime||''}${s.endTime?' → '+s.endTime:''}</div>
+          </div>
+          <button onclick="deleteSleep(${sleeps.findIndex(x=>x.ts===s.ts)})" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-30);padding:4px">🗑</button>
+        </div>`).join('')
+      }
+    </div>
+  `;
+
+  if(sleepTimer.running) {
+    updateSleepDisplay();
+    sleepTimer.interval = setInterval(updateSleepDisplay, 1000);
+  }
+}
+
+function updateSleepDisplay() {
+  if(!sleepTimer.startTime) return;
+  const elapsed = Math.floor((Date.now()-sleepTimer.startTime)/1000);
+  const h = Math.floor(elapsed/3600);
+  const m = Math.floor((elapsed%3600)/60);
+  const s = elapsed%60;
+  const display = document.getElementById('sleepDisplay');
+  if(display) display.textContent = h>0 ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function startSleep() {
+  if(sleepTimer.running) return;
+  sleepTimer.startTime = Date.now();
+  sleepTimer.running = true;
+  clearInterval(sleepTimer.interval);
+  renderSleepTracker();
+}
+
+async function stopSleep() {
+  if(!sleepTimer.running) return;
+  clearInterval(sleepTimer.interval);
+  const elapsed = Math.floor((Date.now()-sleepTimer.startTime)/1000);
+  const startT = new Date(sleepTimer.startTime).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const endT = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  sleepTimer.running = false;
+  const sleeps = (await getItem('bebe_sleeps')) || [];
+  sleeps.push({ duration:elapsed, startTime:startT, endTime:endT, date:new Date().toLocaleDateString('fr-FR'), ts:Date.now() });
+  await setItem('bebe_sleeps', sleeps);
+  sleepTimer.startTime = null;
+  renderSleepTracker();
+  updateDashboard();
+}
+
+function openManualSleep() {
+  openModal(`
+    <div class="modal-title">Ajouter un sommeil 😴</div>
+    <div class="input-group">
+      <label class="input-label">Heure de début</label>
+      <input type="time" class="input-field" id="manualStart">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Heure de fin</label>
+      <input type="time" class="input-field" id="manualEnd">
+    </div>
+    <button class="btn-primary" onclick="saveManualSleep()">Enregistrer</button>
+    <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="closeModal()">Annuler</button>
+  `);
+}
+
+async function saveManualSleep() {
+  const startVal = document.getElementById('manualStart').value;
+  const endVal = document.getElementById('manualEnd').value;
+  if(!startVal||!endVal) return;
+  const [sh,sm] = startVal.split(':').map(Number);
+  const [eh,em] = endVal.split(':').map(Number);
+  let duration = (eh*60+em - (sh*60+sm)) * 60;
+  if(duration <= 0) duration += 24*3600;
+  const sleeps = (await getItem('bebe_sleeps')) || [];
+  sleeps.push({ duration, startTime:startVal, endTime:endVal, date:new Date().toLocaleDateString('fr-FR'), ts:Date.now() });
+  await setItem('bebe_sleeps', sleeps);
+  closeModal();
+  renderSleepTracker();
+  updateDashboard();
+}
+
+async function deleteSleep(idx) {
+  const sleeps = (await getItem('bebe_sleeps')) || [];
+  sleeps.splice(idx,1);
+  await setItem('bebe_sleeps', sleeps);
+  renderSleepTracker();
+  updateDashboard();
+}
+
+// ══════════════════════════════════════════════════════════
+//  TRACKER — STATS DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function renderStatsTracker() {
+  const feeds = (await getItem('bebe_feeds')) || [];
+  const sleeps = (await getItem('bebe_sleeps')) || [];
+
+  // Last 7 days
+  const days7 = [];
+  for(let i=6;i>=0;i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days7.push(d.toLocaleDateString('fr-FR'));
+  }
+
+  const feedsPerDay = days7.map(d => feeds.filter(f=>f.date===d).length);
+  const sleepPerDay = days7.map(d => {
+    const mins = sleeps.filter(s=>s.date===d&&s.duration).reduce((a,s)=>a+s.duration,0);
+    return +(mins/3600).toFixed(1);
+  });
+  const gaucheCount = feeds.filter(f=>f.type==='gauche').length;
+  const droiteCount = feeds.filter(f=>f.type==='droite').length;
+  const biberonCount = feeds.filter(f=>f.type==='biberon').length;
+  const totalFeeds = gaucheCount+droiteCount+biberonCount;
+
+  document.getElementById('trackerContent').innerHTML = `
+    <div style="padding:0 16px">
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin:12px 0 8px">Tétées — 7 derniers jours</div>
+      <div class="chart-area">
+        <canvas id="chartFeeds" height="120"></canvas>
+      </div>
+
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin:14px 0 8px">Sommeil (heures) — 7 jours</div>
+      <div class="chart-area">
+        <canvas id="chartSleep" height="120"></canvas>
+      </div>
+
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--ink);margin:14px 0 8px">Répartition tétées (total)</div>
+      <div class="quick-stats" style="margin:0 0 10px">
+        <div class="quick-stat">
+          <div class="quick-stat-val">${gaucheCount}</div>
+          <div class="quick-stat-label">👈 Gauche</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-val">${droiteCount}</div>
+          <div class="quick-stat-label">👉 Droite</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-stat-val">${biberonCount}</div>
+          <div class="quick-stat-label">🍼 Biberon</div>
+        </div>
+      </div>
+      ${totalFeeds>0 ? `
+      <div class="prog-bar"><div class="prog-fill" style="width:${(gaucheCount/totalFeeds*100).toFixed(0)}%;background:linear-gradient(90deg,var(--blush),var(--blush-deep))"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-30);font-weight:600;margin-top:2px">
+        <span>👈 ${(gaucheCount/totalFeeds*100).toFixed(0)}%</span>
+        <span>👉 ${(droiteCount/totalFeeds*100).toFixed(0)}%</span>
+        <span>🍼 ${(biberonCount/totalFeeds*100).toFixed(0)}%</span>
+      </div>` : ''}
+    </div>
+  `;
+
+  // Charts
+  const labels = days7.map(d => d.split('/').slice(0,2).join('/'));
+  setTimeout(()=>{
+    const ctxF = document.getElementById('chartFeeds');
+    if(ctxF) new Chart(ctxF, {
+      type:'bar',
+      data:{labels, datasets:[{data:feedsPerDay, backgroundColor:'rgba(232,197,207,0.7)', borderColor:'#C9869A', borderWidth:1.5, borderRadius:6}]},
+      options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{font:{family:'DM Sans',size:11}}, grid:{color:'rgba(26,18,24,0.05)'}}, x:{ticks:{font:{family:'DM Sans',size:10}}, grid:{display:false}}}, responsive:true, maintainAspectRatio:false}
+    });
+    const ctxS = document.getElementById('chartSleep');
+    if(ctxS) new Chart(ctxS, {
+      type:'line',
+      data:{labels, datasets:[{data:sleepPerDay, borderColor:'#5A8A5D', backgroundColor:'rgba(127,168,130,0.12)', borderWidth:2, pointBackgroundColor:'#5A8A5D', pointRadius:4, tension:0.4, fill:true}]},
+      options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{font:{family:'DM Sans',size:11}}, grid:{color:'rgba(26,18,24,0.05)'}}, x:{ticks:{font:{family:'DM Sans',size:10}}, grid:{display:false}}}, responsive:true, maintainAspectRatio:false}
+    });
+  }, 100);
+}
+
+// ══════════════════════════════════════════════════════════
+//  PHOTOS
+// ══════════════════════════════════════════════════════════
+async function renderPhotos() {
+  const photos = (await getItem('bebe_photos')) || [];
+
+  // Group by month
+  const byMonth = {};
+  photos.forEach(p => {
+    if(!byMonth[p.month]) byMonth[p.month]=[];
+    byMonth[p.month].push(p);
+  });
+
+  const monthKeys = Object.keys(byMonth).sort().reverse();
+  const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  document.getElementById('photosContent').innerHTML = `
+    <div style="padding:0 16px 12px">
+      <button class="photo-add-btn" onclick="document.getElementById('photoInput').click()">
+        📷 Ajouter des photos
+      </button>
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this)">
+
+      ${monthKeys.length===0 ? `<div style="text-align:center;padding:40px;color:var(--ink-30)"><div style="font-size:48px;margin-bottom:12px">📷</div><div style="font-family:var(--font-display);font-size:18px">Aucune photo encore</div><div style="font-size:13px;margin-top:4px">Capturez ces moments précieux</div></div>` :
+      monthKeys.map(month => {
+        const [y,m] = month.split('-');
+        const label = `${monthNames[parseInt(m)-1]} ${y}`;
+        return `
+          <div style="margin-bottom:20px">
+            <div style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:8px">${label}</div>
+            <div class="photo-grid" style="border-radius:var(--r-md);overflow:hidden">
+              ${byMonth[month].map(p => `
+                <div class="photo-thumb" onclick="openLightbox('${p.url}')">
+                  <img src="${p.url}" alt="${p.caption||''}">
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+async function handlePhotoUpload(input) {
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  const photos = (await getItem('bebe_photos')) || [];
+  const currentMonth = new Date().toISOString().slice(0,7);
+  let loaded = 0;
+  for(const file of files) {
+    if(file.size > 3*1024*1024) { alert(`${file.name} trop lourde (max 3 Mo)`); continue; }
+    await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        // Compress image
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 800;
+          let w=img.width, h=img.height;
+          if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+          if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+          canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          const url = canvas.toDataURL('image/jpeg', 0.75);
+          photos.push({ url, month:currentMonth, ts:Date.now(), caption:'' });
+          loaded++;
+          resolve();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  await setItem('bebe_photos', photos);
+  renderPhotos();
+  updateDashboard();
+  input.value='';
+}
+
+async function deletePhoto(ts) {
+  const photos = (await getItem('bebe_photos')) || [];
+  const idx = photos.findIndex(p=>p.ts===ts);
+  if(idx>-1) photos.splice(idx,1);
+  await setItem('bebe_photos', photos);
+  renderPhotos();
+  updateDashboard();
+}
+
 const MONTHS = [
   {
     num:1, label:"1 mois",
@@ -998,6 +2049,8 @@ const ALIM_DATA = {
       <div class="card-body">
         <div class="alert-ok"><div class="alert-title">✅ Ce qui est normal</div><div class="alert-text">0-6 semaines : <b>8 à 12 tétées/24h</b> — oui, c'est beaucoup. Non, vous n'avez pas assez de lait.<br>6 sem à 3 mois : 8 à 10 tétées/24h<br>3 à 6 mois : 6 à 8 tétées/24h<br>6 à 12 mois : 5 à 6 tétées/24h avec diversification</div></div>
         <div class="alert-warn"><div class="alert-title">⚡ Mon conseil terrain</div><div class="alert-text">Allaitez <b>à la demande, sans regarder l'horloge</b>. Les pleurs ne signifient pas toujours la faim mais répondre = réguler la production. La règle d'or : si bébé grossit et mouille 6+ couches/jour, il mange assez.</div></div>
+
+        <div class="alert-warn"><div class="alert-title">⚡ Mon conseil terrain</div><div class="alert-text">Allaitez <b>à la demande, sans regarder l'horloge</b>. Les pleurs ne signifient pas toujours la faim mais répondre = réguler la production. La règle d'or : si bébé grossit et mouille 6+ couches/jour, il mange assez.</div></div>
         <ul class="info-list" style="margin-top:12px">
           <li class="info-item"><div class="info-bullet">💡</div><div>Durée d'une tétée : 5 à 30 min selon bébé. Ce n'est pas la durée qui compte, c'est l'efficacité.</div></li>
           <li class="info-item"><div class="info-bullet">💡</div><div>Videz toujours le premier sein avant de proposer le second — bébé obtient le lait de fin de tétée riche en graisses.</div></li>
@@ -1152,6 +2205,8 @@ const ALIM_DATA = {
 };
 
 // ══════════════════════════════════════════════════════════
+//  DATA — SOMMEIL
+
 //  DATA — SOMMEIL
 // ══════════════════════════════════════════════════════════
 const SOMMEIL_HTML = `
@@ -1337,17 +2392,15 @@ const MILESTONES = [
 ];
 
 // ══════════════════════════════════════════════════════════
-//  NAVIGATION
+//  NAVIGATION (from original, adapted)
 // ══════════════════════════════════════════════════════════
-function showScreen(name, btn) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+function showScreen(name,btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  btn.classList.add('active');
-  if(name==='alim' && !window._alimInit) { initAlim(); window._alimInit=true; }
-  if(name==='sommeil' && !window._sommeilInit) { initSommeil(); window._sommeilInit=true; }
-  if(name==='sante' && !window._santeInit) { initSante(); window._santeInit=true; }
-  if(name==='journal' && !window._journalInit) { initJournal(); window._journalInit=true; }
+  if(btn) btn.classList.add('active');
+  if(name==='alim'&&!window._alimInit){initAlim();window._alimInit=true;}
+  if(name==='journal'&&!window._journalInit){initJournal();window._journalInit=true;}
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1358,7 +2411,7 @@ function initMonths() {
   const strip = document.getElementById('monthStrip');
   MONTHS.forEach(m => {
     const pill = document.createElement('button');
-    pill.className = 'month-pill' + (m.num===1?' active':'');
+    pill.className = 'month-pill'+(m.num===1?' active':'');
     pill.textContent = m.label;
     pill.onclick = () => selectMonth(m.num);
     strip.appendChild(pill);
@@ -1372,7 +2425,7 @@ function selectMonth(n) {
     p.classList.toggle('active', MONTHS[i].num===n);
   });
   const pill = document.querySelectorAll('.month-pill')[n-1];
-  if(pill) pill.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  if(pill) pill.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   renderMonth(n);
 }
 
@@ -1386,7 +2439,6 @@ function renderMonth(n) {
       <div class="sf-name">Message de votre sage-femme — Mois ${m.num}</div>
       <div class="sf-text">${m.message}</div>
     </div>
-
     <div class="card fade-in">
       <div class="card-header"><span class="card-icon">📏</span><div class="card-title">Croissance attendue</div></div>
       <div class="card-body">
@@ -1394,10 +2446,9 @@ function renderMonth(n) {
           <div class="growth-pill"><div class="growth-val">${m.poids}</div><div class="growth-unit">kilogrammes</div><div class="growth-label">Poids moyen</div></div>
           <div class="growth-pill"><div class="growth-val">${m.taille}</div><div class="growth-unit">centimètres</div><div class="growth-label">Taille moyenne</div></div>
         </div>
-        <div class="alert-ok" style="margin-top:8px"><div class="alert-text">Ces chiffres sont des <b>moyennes</b> — une large variation est normale. Ce qui compte : la <b>courbe de croissance</b> de votre bébé est régulière, pas sa position par rapport à la moyenne.</div></div>
+        <div class="alert-ok" style="margin-top:8px"><div class="alert-text">Ces chiffres sont des <b>moyennes</b>. Ce qui compte : la <b>courbe de croissance</b> régulière, pas la position par rapport à la moyenne.</div></div>
       </div>
     </div>
-
     <div class="card fade-in">
       <div class="card-header"><span class="card-icon">⭐</span><div class="card-title">Ce que bébé sait faire</div></div>
       <div class="card-body">
@@ -1406,7 +2457,6 @@ function renderMonth(n) {
         </ul>
       </div>
     </div>
-
     <div class="card fade-in">
       <div class="card-header"><span class="card-icon">😴</span><div class="card-title">Sommeil ce mois</div></div>
       <div class="card-body">
@@ -1420,46 +2470,42 @@ function renderMonth(n) {
         <ul class="info-list">
           ${m.sommeil.conseils.map(c=>`<li class="info-item"><div class="info-bullet">💡</div><div>${c}</div></li>`).join('')}
         </ul>
-        <div style="margin-top:8px;padding:10px 12px;background:var(--beige);border-radius:var(--radius-sm);font-size:13px;color:var(--text-soft)"><b>La nuit :</b> ${m.sommeil.nuits}</div>
+        <div style="margin-top:8px;padding:10px 12px;background:var(--surface-2);border-radius:var(--r-sm);font-size:13px;color:var(--ink-60);border:1px solid var(--surface-border)"><b>La nuit :</b> ${m.sommeil.nuits}</div>
       </div>
     </div>
-
     <div class="card fade-in">
       <div class="card-header"><span class="card-icon">🍼</span><div class="card-title">Alimentation ce mois</div></div>
       <div class="card-body">
         <div class="section-label">Type</div>
-        <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px">${m.alimentation.type}</div>
+        <div style="font-size:14px;color:var(--ink);font-weight:600;margin-bottom:8px">${m.alimentation.type}</div>
         <div class="section-label">Fréquence</div>
-        <div style="font-size:14px;color:var(--text-soft);margin-bottom:12px">${m.alimentation.freq}</div>
+        <div style="font-size:13px;color:var(--ink-60);margin-bottom:12px">${m.alimentation.freq}</div>
         <ul class="info-list">
           ${m.alimentation.details.map(d=>`<li class="info-item"><div class="info-bullet">→</div><div>${d}</div></li>`).join('')}
         </ul>
       </div>
     </div>
-
     <div class="card fade-in">
       <div class="card-header"><span class="card-icon">✅</span><div class="card-title">Normal — ne vous inquiétez pas</div></div>
       <div class="card-body">
         <ul class="info-list">
-          ${m.normal.map(n=>`<li class="info-item"><div class="info-bullet" style="background:linear-gradient(135deg,var(--sage),var(--sage-deep))">✓</div><div>${n}</div></li>`).join('')}
+          ${m.normal.map(n=>`<li class="info-item"><div class="info-bullet" style="background:linear-gradient(135deg,var(--sage),#5A8A5D)">✓</div><div>${n}</div></li>`).join('')}
         </ul>
       </div>
     </div>
-
     <div class="card fade-in">
-      <div class="card-header"><span class="card-icon">🚨</span><div class="card-title">Signaux d'alarme à ne pas ignorer</div></div>
+      <div class="card-header"><span class="card-icon">🚨</span><div class="card-title">Signaux d'alarme</div></div>
       <div class="card-body">
         <ul class="info-list">
-          ${m.alarmes.map(a=>`<li class="info-item"><div class="info-bullet" style="background:linear-gradient(135deg,#F2C4CE,var(--rose-deep))">!</div><div>${a}</div></li>`).join('')}
+          ${m.alarmes.map(a=>`<li class="info-item"><div class="info-bullet" style="background:linear-gradient(135deg,var(--blush),var(--blush-deep))">!</div><div>${a}</div></li>`).join('')}
         </ul>
       </div>
     </div>
-
     ${hasVaccins ? `<div class="card fade-in">
       <div class="card-header"><span class="card-icon">💉</span><div class="card-title">Vaccins ce mois</div></div>
       <div class="card-body">
         ${m.vaccins.map(v=>`<span class="vaccine-badge">💉 ${v}</span>`).join('')}
-        <div class="alert-ok" style="margin-top:12px"><div class="alert-text">Fièvre légère et irritabilité dans les 24-48h post-vaccin : normal. Paracétamol autorisé. Si fièvre >39°C ou réaction marquée : appelez votre médecin.</div></div>
+        <div class="alert-ok" style="margin-top:12px"><div class="alert-text">Fièvre légère dans les 24-48h post-vaccin : normal. Paracétamol autorisé.</div></div>
       </div>
     </div>` : ''}
   `;
@@ -1468,43 +2514,23 @@ function renderMonth(n) {
 // ══════════════════════════════════════════════════════════
 //  ALIMENTATION
 // ══════════════════════════════════════════════════════════
-let currentAlimTab = 'allait';
-function initAlim() { showAlimTab('allait'); }
+function initAlim(){showAlimTab('allait');}
 function showAlimTab(tab) {
-  currentAlimTab = tab;
-  document.querySelectorAll('#screen-alim .inner-tab').forEach((t,i) => {
-    const tabs = ['allait','biberon','divers','recettes'];
-    t.classList.toggle('active', tabs[i]===tab);
+  document.querySelectorAll('#screen-alim .inner-tab').forEach((t,i)=>{
+    t.classList.toggle('active',['allait','biberon','divers','recettes'][i]===tab);
   });
-  document.getElementById('alimContent').innerHTML = ALIM_DATA[tab] || '';
-}
-
-// ══════════════════════════════════════════════════════════
-//  SOMMEIL
-// ══════════════════════════════════════════════════════════
-function initSommeil() {
-  document.getElementById('sommeilContent').innerHTML = SOMMEIL_HTML;
-}
-
-// ══════════════════════════════════════════════════════════
-//  SANTÉ
-// ══════════════════════════════════════════════════════════
-function initSante() {
-  document.getElementById('santeContent').innerHTML = SANTE_HTML;
+  document.getElementById('alimContent').innerHTML = ALIM_DATA[tab]||'';
 }
 
 // ══════════════════════════════════════════════════════════
 //  JOURNAL
 // ══════════════════════════════════════════════════════════
-function initJournal() { showJournalTab('notes'); }
-
-// ── showJournalTab ────────────────────────────────────────
+function initJournal(){showJournalTab('notes');}
 function showJournalTab(tab) {
-  document.querySelectorAll('#screen-journal .inner-tab').forEach((t,i) => {
-    const tabs = ['notes','croissance','vaccins','premiers'];
-    t.classList.toggle('active', tabs[i]===tab);
+  document.querySelectorAll('#screen-journal .inner-tab').forEach((t,i)=>{
+    t.classList.toggle('active',['notes','croissance','vaccins','premiers'][i]===tab);
   });
-  document.getElementById('journalContent').innerHTML = '<div style="text-align:center;padding:40px;font-size:28px">🌸</div>';
+  document.getElementById('journalContent').innerHTML='<div style="text-align:center;padding:40px;font-size:24px">🌸</div>';
   if(tab==='notes') renderNotesTab();
   else if(tab==='croissance') renderCroissanceTab();
   else if(tab==='vaccins') renderVaccinsTab();
@@ -1825,161 +2851,7 @@ async function renderPremiersTab() {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  SUPABASE + AUTH + INIT
-// ══════════════════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://rzevifmlhmfhtdncgvoo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_joZrgkNR1kfpnfKdmPQmwQ_4R71mfay';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let currentUser = null;
-
-// ─── HELPERS DB ───────────────────────────────────────────
-async function dbGet(table) {
-  if(!currentUser) return null;
-  const { data, error } = await sb.from(table).select('data').eq('user_id', currentUser.id).single();
-  if(error || !data) return null;
-  return data.data;
-}
-
-async function dbSet(table, value) {
-  if(!currentUser) return;
-  const { error } = await sb.from(table).upsert({ user_id: currentUser.id, data: value }, { onConflict: 'user_id' });
-  if(error) console.error('dbSet error', table, error);
-}
-
-// ─── MIGRATION localStorage → Supabase (1 seule fois) ────
-async function migrateLocalStorage() {
-  const keys = ['bebe_notes','bebe_growth','bebe_vaccins','bebe_milestones'];
-  for(const key of keys) {
-    const local = localStorage.getItem(key);
-    if(!local) continue;
-    const existing = await dbGet(key);
-    if(!existing) {
-      await dbSet(key, JSON.parse(local));
-    }
-    localStorage.removeItem(key);
-  }
-}
-
-// ─── WRAPPERS localStorage → Supabase ────────────────────
-// On garde les mêmes noms pour ne rien casser
-const _cache = {};
-
-async function getItem(key) {
-  if(_cache[key] !== undefined) return _cache[key];
-  const val = await dbGet(key);
-  _cache[key] = val;
-  return val;
-}
-
-async function setItem(key, value) {
-  _cache[key] = value;
-  await dbSet(key, value);
-}
-
-// ─── AUTH UI ──────────────────────────────────────────────
-let authMode = 'login';
-
-function switchAuthTab(mode) {
-  authMode = mode;
-  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
-  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
-  document.getElementById('authBtn').textContent = mode==='login' ? 'Se connecter' : 'Créer mon compte';
-  document.getElementById('authPrenom').style.display = mode==='signup' ? 'block' : 'none';
-  document.getElementById('authError').style.display = 'none';
-  document.getElementById('authSuccess').style.display = 'none';
-}
-
-function showAuthError(msg) {
-  const el = document.getElementById('authError');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('authSuccess').style.display = 'none';
-}
-
-function showAuthSuccess(msg) {
-  const el = document.getElementById('authSuccess');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('authError').style.display = 'none';
-}
-
-document.getElementById('authBtn').addEventListener('click', async () => {
-  const email = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPassword').value;
-  if(!email || !password) { showAuthError('Veuillez remplir tous les champs.'); return; }
-  document.getElementById('authBtn').textContent = '…';
-
-  if(authMode === 'login') {
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if(error) { showAuthError('Email ou mot de passe incorrect.'); document.getElementById('authBtn').textContent = 'Se connecter'; }
-  } else {
-    const prenom = document.getElementById('authPrenomInput').value.trim();
-    const { error } = await sb.auth.signUp({ email, password, options:{ data:{ prenom } } });
-    if(error) { showAuthError(error.message); document.getElementById('authBtn').textContent = 'Créer mon compte'; }
-    else { showAuthSuccess('Compte créé ! Vérifiez votre email pour confirmer.'); document.getElementById('authBtn').textContent = 'Créer mon compte'; }
-  }
-});
-
-document.getElementById('btnLogout').addEventListener('click', async () => {
-  await sb.auth.signOut();
-});
-
-// ─── LANCEMENT APP ────────────────────────────────────────
-async function launchApp(user) {
-  currentUser = user;
-  document.getElementById('auth-screen').classList.add('hide');
-  document.getElementById('userBar').style.display = 'flex';
-  document.getElementById('userEmail').textContent = user.email;
-
-  // Splash
-  const splash = document.getElementById('splash');
-  splash.style.display = 'flex';
-  splash.style.position = 'fixed';
-  splash.style.inset = '0';
-  splash.style.zIndex = '1000';
-  splash.style.background = 'linear-gradient(160deg,#FDF0F3 0%,#F5EDE3 50%,#EFF4EE 100%)';
-  splash.style.flexDirection = 'column';
-  splash.style.alignItems = 'center';
-  splash.style.justifyContent = 'center';
-  splash.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-
-  await migrateLocalStorage();
-
-  setTimeout(() => {
-    splash.style.opacity = '0';
-    splash.style.transform = 'scale(1.05)';
-    splash.style.pointerEvents = 'none';
-    setTimeout(() => {
-      splash.style.display = 'none';
-      document.getElementById('app').classList.add('visible');
-      initMonths();
-    }, 800);
-  }, 1800);
-}
-
-// ─── INIT PRINCIPAL ───────────────────────────────────────
-window.addEventListener('load', async () => {
-  // Écoute les changements d'état d'auth
-  sb.auth.onAuthStateChange(async (event, session) => {
-    document.getElementById('loadingOverlay').classList.add('hide');
-    if(session?.user) {
-      if(!currentUser) await launchApp(session.user);
-    } else {
-      currentUser = null;
-      document.getElementById('auth-screen').classList.remove('hide');
-      document.getElementById('userBar').style.display = 'none';
-      document.getElementById('app').classList.remove('visible');
-    }
-  });
-
-  // Vérifie session existante
-  const { data:{ session } } = await sb.auth.getSession();
-  if(!session) {
-    document.getElementById('loadingOverlay').classList.add('hide');
-    document.getElementById('auth-screen').classList.remove('hide');
-  }
-});
 </script>
 </body>
 </html>
