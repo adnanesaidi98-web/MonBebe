@@ -526,14 +526,33 @@ textarea.input-field { min-height:80px; resize:vertical; }
 /* ─── USER BAR ─── */
 .user-bar {
   position:fixed; top:0; right:0; z-index:200;
-  padding:10px 14px; display:flex; align-items:center; gap:8px;
+  padding: max(10px, env(safe-area-inset-top, 10px)) 14px 10px;
+  display:flex; align-items:center; gap:8px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0 0 0 16px;
+  border-left: 1px solid var(--surface-border);
+  border-bottom: 1px solid var(--surface-border);
 }
-.user-email { font-size:11px; color:var(--ink-30); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.user-email { font-size:11px; color:var(--ink-30); max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .btn-logout {
-  padding:5px 12px; border-radius:50px;
+  padding:6px 14px; border-radius:50px;
   border:1.5px solid var(--surface-border); background:var(--surface);
   font-size:11px; font-weight:600; color:var(--ink-60); cursor:pointer;
   font-family:var(--font-body);
+  white-space:nowrap;
+  position:relative; z-index:201;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+@media (max-width:430px) {
+  .user-email { display:none; }
+  .user-bar {
+    padding: max(8px, env(safe-area-inset-top, 8px)) 10px 8px;
+    border-radius: 0 0 0 12px;
+  }
+  .btn-logout { padding:5px 11px; font-size:10px; }
 }
 
 /* ─── LOADING ─── */
@@ -807,6 +826,32 @@ canvas { border-radius:var(--r-sm); }
 /* ─── FADE ─── */
 .fade-in { animation: cardIn 0.4s ease forwards; }
 
+/* ─── RESPONSIVE MOBILE ─── */
+@media (max-width:430px) {
+  .page-header { padding: 50px 16px 16px; }
+  .page-title { font-size:22px; }
+  .quick-stats { gap:6px; }
+  .quick-stat { padding:12px 6px; }
+  .quick-stat-val { font-size:18px; }
+  .dash-bebe-name { font-size:24px; }
+  .timer-display { font-size:44px; }
+  .card { margin:8px 12px; }
+  .inner-tabs { margin:10px 12px 0 !important; }
+  .stat-val { font-size:17px; }
+  .growth-val { font-size:18px; }
+}
+
+/* ─── PRINT STYLES ─── */
+@media print {
+  body * { visibility: hidden; }
+  #printZone, #printZone * { visibility: visible; }
+  #printZone {
+    position: fixed; left:0; top:0; width:100%;
+    font-family: var(--font-body);
+  }
+  .print-no { display:none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -1005,6 +1050,11 @@ canvas { border-radius:var(--r-sm); }
         <button class="inner-tab" onclick="showJournalTab('croissance')">Courbes</button>
         <button class="inner-tab" onclick="showJournalTab('vaccins')">Vaccins</button>
         <button class="inner-tab" onclick="showJournalTab('premiers')">Premières</button>
+      </div>
+      <div id="journalPrintBar" style="display:none;padding:8px 16px 0">
+        <button onclick="printCurrentTab()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:50px;border:1.5px solid var(--blush-deep);background:var(--blush-pale);color:var(--blush-deep);font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer;margin-left:auto">
+          🖨️ Imprimer / PDF
+        </button>
       </div>
       <div id="journalContent"></div>
     </div>
@@ -2526,15 +2576,113 @@ function showAlimTab(tab) {
 //  JOURNAL
 // ══════════════════════════════════════════════════════════
 function initJournal(){showJournalTab('notes');}
+let _currentJournalTab = 'notes';
 function showJournalTab(tab) {
+  _currentJournalTab = tab;
   document.querySelectorAll('#screen-journal .inner-tab').forEach((t,i)=>{
     t.classList.toggle('active',['notes','croissance','vaccins','premiers'][i]===tab);
   });
+  // Show print button only for vaccins and croissance
+  const printBar = document.getElementById('journalPrintBar');
+  if(printBar) printBar.style.display = (tab==='vaccins'||tab==='croissance') ? 'flex' : 'none';
   document.getElementById('journalContent').innerHTML='<div style="text-align:center;padding:40px;font-size:24px">🌸</div>';
   if(tab==='notes') renderNotesTab();
   else if(tab==='croissance') renderCroissanceTab();
   else if(tab==='vaccins') renderVaccinsTab();
   else if(tab==='premiers') renderPremiersTab();
+}
+
+async function printCurrentTab() {
+  const tab = _currentJournalTab;
+  const profile = (await getItem('bebe_profile')) || {};
+  const bebeNom = profile.nom || 'Bébé';
+  let printHTML = '';
+
+  if(tab === 'vaccins') {
+    const vaccins = (await getItem('bebe_vaccins')) || [];
+    printHTML = `
+      <div id="printZone" style="font-family:Georgia,serif;max-width:700px;margin:0 auto;padding:32px;color:#1A1218">
+        <div style="text-align:center;margin-bottom:28px;border-bottom:2px solid #E8C5CF;padding-bottom:20px">
+          <div style="font-size:28px;margin-bottom:8px">💉 Carnet de Vaccination</div>
+          <div style="font-size:20px;font-weight:700;color:#C9869A">${bebeNom}</div>
+          <div style="font-size:13px;color:#888;margin-top:4px">Imprimé le ${new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</div>
+        </div>
+        ${vaccins.length === 0 ? '<p style="text-align:center;color:#888">Aucun vaccin enregistré.</p>' : `
+          <table style="width:100%;border-collapse:collapse;font-size:14px">
+            <thead>
+              <tr style="background:#FDF5F7;border-bottom:2px solid #E8C5CF">
+                <th style="padding:12px 10px;text-align:left;color:#C9869A;font-weight:700">Date</th>
+                <th style="padding:12px 10px;text-align:left;color:#C9869A;font-weight:700">Âge</th>
+                <th style="padding:12px 10px;text-align:left;color:#C9869A;font-weight:700">Vaccin</th>
+                <th style="padding:12px 10px;text-align:left;color:#C9869A;font-weight:700">Réactions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${vaccins.map((v,i)=>`
+                <tr style="border-bottom:1px solid #F0E8EB;background:${i%2===0?'#fff':'#FDF5F7'}">
+                  <td style="padding:10px 10px;vertical-align:top;white-space:nowrap">${v.date||'—'}</td>
+                  <td style="padding:10px 10px;vertical-align:top;white-space:nowrap">${v.age||'—'}</td>
+                  <td style="padding:10px 10px;vertical-align:top;font-weight:600">${v.nom||'—'}</td>
+                  <td style="padding:10px 10px;vertical-align:top;color:#888">${v.reaction||'Aucune'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`}
+        <div style="margin-top:32px;padding-top:16px;border-top:1px solid #E8C5CF;font-size:11px;color:#aaa;text-align:center">
+          Document généré par Mon Bébé — Guide Sage-Femme
+        </div>
+      </div>`;
+  } else if(tab === 'croissance') {
+    const entries = (await getItem('bebe_growth')) || [];
+    printHTML = `
+      <div id="printZone" style="font-family:Georgia,serif;max-width:700px;margin:0 auto;padding:32px;color:#1A1218">
+        <div style="text-align:center;margin-bottom:28px;border-bottom:2px solid #7FA882;padding-bottom:20px">
+          <div style="font-size:28px;margin-bottom:8px">📈 Courbe de Croissance</div>
+          <div style="font-size:20px;font-weight:700;color:#5A8A5D">${bebeNom}</div>
+          <div style="font-size:13px;color:#888;margin-top:4px">Imprimé le ${new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</div>
+        </div>
+        ${entries.length === 0 ? '<p style="text-align:center;color:#888">Aucune mesure enregistrée.</p>' : `
+          <table style="width:100%;border-collapse:collapse;font-size:14px">
+            <thead>
+              <tr style="background:#EFF5EF;border-bottom:2px solid #7FA882">
+                <th style="padding:12px 10px;text-align:left;color:#5A8A5D;font-weight:700">Date</th>
+                <th style="padding:12px 10px;text-align:left;color:#5A8A5D;font-weight:700">Âge (mois)</th>
+                <th style="padding:12px 10px;text-align:left;color:#5A8A5D;font-weight:700">Poids</th>
+                <th style="padding:12px 10px;text-align:left;color:#5A8A5D;font-weight:700">Taille</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entries.map((e,i)=>`
+                <tr style="border-bottom:1px solid #E0EDE0;background:${i%2===0?'#fff':'#EFF5EF'}">
+                  <td style="padding:10px 10px">${e.date||'—'}</td>
+                  <td style="padding:10px 10px">${e.age} mois</td>
+                  <td style="padding:10px 10px;font-weight:600">${e.poids} kg</td>
+                  <td style="padding:10px 10px">${e.taille ? e.taille+' cm' : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+          <div style="margin-top:20px;padding:14px;background:#EFF5EF;border-radius:10px;font-size:13px;color:#5A8A5D">
+            <strong>Note :</strong> Ces mesures sont à interpréter avec votre médecin ou pédiatre en lien avec les courbes OMS.
+          </div>`}
+        <div style="margin-top:32px;padding-top:16px;border-top:1px solid #7FA882;font-size:11px;color:#aaa;text-align:center">
+          Document généré par Mon Bébé — Guide Sage-Femme
+        </div>
+      </div>`;
+  }
+
+  if(!printHTML) return;
+
+  // Open print window
+  const w = window.open('', '_blank', 'width=800,height=900');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mon Bébé — ${tab==='vaccins'?'Vaccins':'Croissance'}</title>
+    <style>
+      body { margin:0; padding:0; background:#fff; }
+      @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+      @page { margin: 1.5cm; }
+    </style>
+  </head><body>${printHTML}
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  w.document.close();
 }
 
 // NOTES
@@ -2826,11 +2974,18 @@ async function renderPremiersTab() {
     </div>
     <div style="padding:0 16px 16px" id="milestonesList">
       ${MILESTONES.map((m,i)=>`
-        <div class="milestone-row">
+        <div class="milestone-row" style="${done[i]?'border-color:var(--sage);background:var(--sage-pale);':''}">
           <div class="milestone-icon">${m.icon}</div>
           <div style="flex:1">
             <div class="milestone-name">${m.name}</div>
-            ${done[i] ? `<div class="milestone-date">🗓 ${done[i].date}</div>` : '<div class="milestone-date" style="color:var(--text-light)">Pas encore…</div>'}
+            ${done[i] ? `
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+                <span style="font-size:11px;color:var(--ink-30)">📅</span>
+                <input type="date" class="milestone-date-input" data-action="edit-milestone-date" data-idx="${i}"
+                  value="${done[i]._rawDate||''}"
+                  style="font-size:12px;color:var(--sage);font-weight:600;border:none;background:transparent;outline:none;font-family:var(--font-body);cursor:pointer;padding:0;max-width:130px;"
+                  title="Modifier la date">
+              </div>` : '<div class="milestone-date" style="color:var(--ink-30)">Pas encore…</div>'}
           </div>
           <div class="milestone-check ${done[i]?'done':''}" data-action="toggle-milestone" data-idx="${i}">${done[i]?'✓':''}</div>
         </div>`).join('')}
@@ -2843,8 +2998,33 @@ async function renderPremiersTab() {
       if(!el) return;
       const i = parseInt(el.dataset.idx);
       const done = (await getItem('bebe_milestones')) || {};
-      if(done[i]) { delete done[i]; }
-      else { done[i] = {date: new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}; }
+      if(done[i]) {
+        if(!confirm('Supprimer cette première fois ?')) return;
+        delete done[i];
+      } else {
+        const today = new Date();
+        const rawDate = today.toISOString().split('T')[0];
+        done[i] = {
+          date: today.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}),
+          _rawDate: rawDate
+        };
+      }
+      await setItem('bebe_milestones', done);
+      showJournalTab('premiers');
+    });
+    // Allow editing the date after the fact
+    list.addEventListener('change', async function(e) {
+      const input = e.target.closest('[data-action="edit-milestone-date"]');
+      if(!input) return;
+      const i = parseInt(input.dataset.idx);
+      const rawDate = input.value;
+      if(!rawDate) return;
+      const done = (await getItem('bebe_milestones')) || {};
+      const d = new Date(rawDate + 'T12:00:00');
+      done[i] = {
+        date: d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}),
+        _rawDate: rawDate
+      };
       await setItem('bebe_milestones', done);
       showJournalTab('premiers');
     });
