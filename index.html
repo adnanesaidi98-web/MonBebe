@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mon Bébé">
@@ -1086,6 +1086,12 @@ async function getItem(key) {
   _cache[key]=val;
   return val;
 }
+// Force fresh fetch from Supabase (bypass cache) — used for photos
+async function getItemFresh(key) {
+  const val = await dbGet(key);
+  _cache[key]=val;
+  return val;
+}
 async function setItem(key,value) {
   _cache[key]=value;
   await dbSet(key,value);
@@ -1727,7 +1733,8 @@ async function renderStatsTracker() {
 //  PHOTOS
 // ══════════════════════════════════════════════════════════
 async function renderPhotos() {
-  const photos = (await getItem('bebe_photos')) || [];
+  // Always fetch fresh from Supabase so photos sync across devices
+  const photos = (await getItemFresh('bebe_photos')) || [];
 
   // Group by month
   const byMonth = {};
@@ -2740,14 +2747,23 @@ async function printCurrentTab() {
 
   // Open print window
   const w = window.open('', '_blank', 'width=800,height=900');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mon Bébé — ${tab==='vaccins'?'Vaccins':'Croissance'}</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Bébé — ${tab==='vaccins'?'Vaccins':'Croissance'}</title>
     <style>
-      body { margin:0; padding:0; background:#fff; }
-      @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+      body { margin:0; padding:0; background:#fff; font-family:Georgia,serif; }
+      @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .no-print { display:none !important; } }
       @page { margin: 1.5cm; }
+      .toolbar { position:sticky; top:0; background:#fff; border-bottom:1px solid #eee; padding:12px 20px; display:flex; gap:10px; align-items:center; z-index:100; }
+      .btn-back { padding:8px 16px; border-radius:50px; border:1.5px solid #ddd; background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:#444; }
+      .btn-print { padding:8px 20px; border-radius:50px; border:none; background:#E8607A; color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
     </style>
-  </head><body>${printHTML}
-    <script>window.onload=function(){window.print();}<\/script>
+  </head><body>
+    <div class="toolbar no-print">
+      <button class="btn-back" onclick="window.close()">← Retour</button>
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimer / Enregistrer PDF</button>
+    </div>
+    ${printHTML}
   </body></html>`);
   w.document.close();
 }
