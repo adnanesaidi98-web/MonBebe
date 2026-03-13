@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mon Bébé">
+<title>Mon Bébé — Guide de Sage-Femme</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --rose: #F2C4CE;
+  --rose-deep: #E8A0B0;
+  --rose-pale: #FDF0F3;
+  --beige: #F5EDE3;
+  --beige-warm: #EDE0D0;
+  --sage: #B8C9B0;
+  --sage-deep: #8FAF85;
+  --sage-pale: #EFF4EE;
+  --cream: #FDFAF6;
+  --text: #3D3030;
+  --text-soft: #7A6060;
+  --text-light: #A89090;
+  --white: #FFFFFF;
+  --shadow: rgba(180,140,140,0.12);
+  --shadow-md: rgba(180,140,140,0.2);
+  --radius: 20px;
+  --radius-sm: 12px;
+  --nav-h: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── SPLASH ─── */
+#splash {
+  position: fixed; inset: 0; z-index: 1000;
+  background: linear-gradient(160deg, #FDF0F3 0%, #F5EDE3 50%, #EFF4EE 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+#splash.hide { opacity:0; transform:scale(1.05); pointer-events:none; }
+.splash-flower {
+  font-size: 64px; animation: bloom 1.5s ease forwards;
+  opacity:0; transform:scale(0.5);
+}
+@keyframes bloom {
+  to { opacity:1; transform:scale(1) rotate(5deg); }
+}
+.splash-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px; font-weight: 300; color: var(--text);
+  margin-top: 16px; letter-spacing: 1px;
+  animation: fadeUp 1s 0.4s ease forwards; opacity:0; transform:translateY(16px);
+}
+.splash-sub {
+  font-size: 13px; color: var(--text-soft); margin-top: 8px; letter-spacing: 2px; text-transform: uppercase;
+  animation: fadeUp 1s 0.7s ease forwards; opacity:0; transform:translateY(12px);
+}
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+/* ─── APP SHELL ─── */
+#app { display:none; height:100vh; display:flex; flex-direction:column; }
+#app.visible { display:flex; }
+
+/* ─── SCREENS ─── */
+.screen {
+  flex:1; overflow-y:auto; padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 16px);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav {
+  position: fixed; bottom:0; left:0; right:0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(253,250,246,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(180,140,140,0.12);
+  display: flex; align-items: flex-start; padding-top: 8px;
+  z-index: 100;
+  box-shadow: 0 -8px 32px rgba(180,140,140,0.08);
+}
+.nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:none; border:none; cursor:pointer; padding:4px 2px;
+  transition: transform 0.2s ease;
+}
+.nav-btn:active { transform: scale(0.9); }
+.nav-icon {
+  font-size: 22px; line-height:1;
+  transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+.nav-label {
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--text-light); transition: color 0.2s;
+  text-align:center; line-height:1.2;
+}
+.nav-btn.active .nav-icon { transform: scale(1.2) translateY(-2px); }
+.nav-btn.active .nav-label { color: var(--rose-deep); }
+.nav-dot {
+  width:4px; height:4px; border-radius:50%;
+  background: var(--rose-deep); margin-top:1px;
+  opacity:0; transition:opacity 0.2s;
+}
+.nav-btn.active .nav-dot { opacity:1; }
+
+/* ─── HEADERS ─── */
+.page-header {
+  padding: 52px 20px 24px;
+  background: linear-gradient(160deg, var(--rose-pale) 0%, var(--beige) 100%);
+  position: relative; overflow:hidden;
+}
+.page-header::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:180px; height:180px; border-radius:50%;
+  background: rgba(242,196,206,0.3); pointer-events:none;
+}
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 400; line-height:1.2;
+  color: var(--text);
+}
+.page-subtitle {
+  font-size: 13px; color: var(--text-soft); margin-top:4px;
+  font-weight: 400; line-height: 1.5;
+}
+
+/* ─── MONTH SELECTOR ─── */
+.month-strip {
+  display:flex; gap:8px; padding:16px 20px;
+  overflow-x:auto; scrollbar-width:none;
+  background: var(--cream); position:sticky; top:0; z-index:10;
+  box-shadow: 0 4px 16px rgba(180,140,140,0.08);
+}
+.month-strip::-webkit-scrollbar { display:none; }
+.month-pill {
+  flex-shrink:0; padding:8px 16px; border-radius:50px;
+  font-size:13px; font-weight:600; cursor:pointer;
+  background: var(--white); color: var(--text-soft);
+  border: 1.5px solid transparent;
+  transition: all 0.25s ease;
+  white-space:nowrap;
+}
+.month-pill.active {
+  background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+  color: var(--white); border-color: transparent;
+  box-shadow: 0 4px 12px rgba(232,160,176,0.4);
+  transform: translateY(-1px);
+}
+
+/* ─── CARDS ─── */
+.card {
+  margin: 12px 16px; border-radius: var(--radius);
+  background: var(--white); overflow:hidden;
+  box-shadow: 0 4px 20px var(--shadow);
+  animation: cardIn 0.4s ease forwards;
+}
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.card-header {
+  padding:16px 20px 12px;
+  display:flex; align-items:center; gap:10px;
+  border-bottom: 1px solid rgba(180,140,140,0.08);
+}
+.card-icon { font-size:20px; flex-shrink:0; }
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size:20px; font-weight:500; color:var(--text);
+}
+.card-body { padding:16px 20px; }
+
+/* ─── SAGE-FEMME MESSAGE ─── */
+.sf-message {
+  margin:12px 16px; border-radius: var(--radius);
+  background: linear-gradient(135deg, #FDF0F3, #F5EDE3);
+  border: 1.5px solid rgba(242,196,206,0.5);
+  padding:20px; position:relative; overflow:hidden;
+}
+.sf-message::before {
+  content:''; position:absolute; top:-20px; right:-20px;
+  width:100px; height:100px; border-radius:50%;
+  background:rgba(242,196,206,0.2); pointer-events:none;
+}
+.sf-avatar { font-size:28px; margin-bottom:8px; display:block; }
+.sf-name {
+  font-size:11px; text-transform:uppercase; letter-spacing:2px;
+  color: var(--text-soft); font-weight:700; margin-bottom:8px;
+}
+.sf-text {
+  font-family:'Cormorant Garamond', serif;
+  font-size:18px; font-weight:400; font-style:italic;
+  color:var(--text); line-height:1.6;
+}
+
+/* ─── LIST ITEMS ─── */
+.info-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.info-item {
+  display:flex; gap:10px; align-items:flex-start;
+  font-size:14px; line-height:1.6; color:var(--text-soft);
+}
+.info-bullet {
+  flex-shrink:0; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; color:var(--white);
+  background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+  margin-top:1px;
+}
+.info-item b { color:var(--text); }
+
+/* ─── ALERT BOXES ─── */
+.alert-ok {
+  background: linear-gradient(135deg, #EFF4EE, #E8F0E5);
+  border-left:4px solid var(--sage-deep);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:14px 16px; margin:8px 0;
+}
+.alert-warn {
+  background: linear-gradient(135deg, #FFF8F0, #FFF0E8);
+  border-left:4px solid #E8A870;
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:14px 16px; margin:8px 0;
+}
+.alert-urg {
+  background: linear-gradient(135deg, #FDF0F3, #F8E8EC);
+  border-left:4px solid var(--rose-deep);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:14px 16px; margin:8px 0;
+}
+.alert-title {
+  font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;
+  margin-bottom:8px;
+}
+.alert-ok .alert-title { color:var(--sage-deep); }
+.alert-warn .alert-title { color:#C87A40; }
+.alert-urg .alert-title { color:var(--rose-deep); }
+.alert-text { font-size:13.5px; line-height:1.6; color:var(--text-soft); }
+.alert-text b { color:var(--text); }
+
+/* ─── VACCINE BADGE ─── */
+.vaccine-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--sage-pale); border:1.5px solid var(--sage);
+  border-radius:50px; padding:6px 12px; margin:4px 4px 4px 0;
+  font-size:12px; font-weight:600; color: var(--sage-deep);
+}
+
+/* ─── SECTION TITLE ─── */
+.section-label {
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:2px;
+  color:var(--text-light); padding:0 0 8px;
+}
+.section-big {
+  font-family:'Cormorant Garamond', serif;
+  font-size:22px; font-weight:500; color:var(--text);
+  margin-bottom:12px;
+}
+
+/* ─── GROWTH PILL ─── */
+.growth-row {
+  display:flex; gap:12px; margin:4px 0;
+}
+.growth-pill {
+  flex:1; background:var(--beige); border-radius:var(--radius-sm);
+  padding:12px; text-align:center;
+}
+.growth-val {
+  font-family:'Cormorant Garamond', serif;
+  font-size:26px; font-weight:500; color:var(--text);
+}
+.growth-unit { font-size:11px; color:var(--text-light); margin-top:2px; }
+.growth-label { font-size:12px; color:var(--text-soft); font-weight:600; margin-top:4px; }
+
+/* ─── TABS (inner) ─── */
+.inner-tabs {
+  display:flex; gap:0; background:var(--beige); border-radius:var(--radius-sm);
+  padding:4px; margin-bottom:16px;
+}
+.inner-tab {
+  flex:1; padding:8px 4px; border:none; background:none; cursor:pointer;
+  font-family:'Nunito', sans-serif; font-size:12px; font-weight:600;
+  color:var(--text-soft); border-radius:calc(var(--radius-sm) - 4px);
+  transition:all 0.2s ease;
+}
+.inner-tab.active {
+  background:var(--white); color:var(--rose-deep);
+  box-shadow:0 2px 8px var(--shadow);
+}
+
+/* ─── JOURNAL ─── */
+.input-group { margin-bottom:16px; }
+.input-label {
+  font-size:12px; font-weight:700; color:var(--text-soft);
+  text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; display:block;
+}
+.input-field {
+  width:100%; padding:12px 16px; border-radius:var(--radius-sm);
+  border:1.5px solid var(--beige-warm); background:var(--white);
+  font-family:'Nunito', sans-serif; font-size:14px; color:var(--text);
+  outline:none; transition:border-color 0.2s;
+  -webkit-appearance:none;
+}
+.input-field:focus { border-color:var(--rose); }
+textarea.input-field { min-height:80px; resize:vertical; }
+.btn-primary {
+  width:100%; padding:14px; border-radius:var(--radius-sm);
+  background:linear-gradient(135deg, var(--rose), var(--rose-deep));
+  color:var(--white); font-family:'Nunito', sans-serif;
+  font-size:15px; font-weight:700; border:none; cursor:pointer;
+  box-shadow:0 4px 16px rgba(232,160,176,0.35);
+  transition:all 0.2s ease;
+}
+.btn-primary:active { transform:scale(0.98); }
+.btn-sage {
+  width:100%; padding:14px; border-radius:var(--radius-sm);
+  background:linear-gradient(135deg, var(--sage), var(--sage-deep));
+  color:var(--white); font-family:'Nunito', sans-serif;
+  font-size:15px; font-weight:700; border:none; cursor:pointer;
+  box-shadow:0 4px 16px rgba(143,175,133,0.35);
+  transition:all 0.2s ease;
+}
+.btn-sage:active { transform:scale(0.98); }
+
+/* ─── JOURNAL ENTRIES ─── */
+.journal-entry {
+  background:var(--white); border-radius:var(--radius-sm);
+  padding:14px 16px; margin-bottom:10px;
+  box-shadow:0 2px 12px var(--shadow);
+  animation: cardIn 0.3s ease forwards;
+}
+.entry-date { font-size:11px; color:var(--text-light); font-weight:600; margin-bottom:4px; }
+.entry-text { font-size:14px; color:var(--text-soft); line-height:1.6; }
+
+/* ─── CANVAS ─── */
+canvas {
+  border-radius:var(--radius-sm);
+  background:var(--white);
+}
+
+/* ─── MILESTONE ─── */
+.milestone-row {
+  display:flex; align-items:center; gap:12px;
+  background:var(--white); border-radius:var(--radius-sm);
+  padding:12px 16px; margin-bottom:8px;
+  box-shadow:0 2px 8px var(--shadow);
+}
+.milestone-icon { font-size:22px; }
+.milestone-name { font-size:14px; font-weight:600; color:var(--text); flex:1; }
+.milestone-date { font-size:12px; color:var(--text-light); }
+.milestone-check {
+  width:24px; height:24px; border-radius:50%;
+  background:var(--sage-pale); border:2px solid var(--sage);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; cursor:pointer;
+}
+.milestone-check.done {
+  background:var(--sage); color:var(--white); border-color:var(--sage-deep);
+}
+
+/* ─── SCREEN HIDDEN ─── */
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* ─── RECIPE CARD ─── */
+.recipe {
+  background:linear-gradient(135deg, var(--beige), var(--beige-warm));
+  border-radius:var(--radius-sm); padding:14px 16px; margin:8px 0;
+}
+.recipe-title { font-weight:700; font-size:14px; color:var(--text); margin-bottom:6px; }
+.recipe-text { font-size:13px; color:var(--text-soft); line-height:1.7; }
+
+/* ─── DIVIDER ─── */
+.divider {
+  height:1px; background:linear-gradient(90deg, transparent, var(--beige-warm), transparent);
+  margin:16px 0;
+}
+
+/* ─── SCROLL HINT ─── */
+.scroll-hint {
+  text-align:center; padding:8px; color:var(--text-light);
+  font-size:12px; animation: bounce 2s infinite;
+}
+@keyframes bounce {
+  0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)}
+}
+
+/* ─── SECTION COLLAPSIBLE ─── */
+.collapsible { cursor:pointer; }
+.collapsible-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:14px 20px; background:var(--white);
+  border-bottom:1px solid rgba(180,140,140,0.08);
+}
+.collapsible-arrow {
+  font-size:12px; color:var(--text-light);
+  transition:transform 0.2s;
+}
+.collapsible.open .collapsible-arrow { transform:rotate(180deg); }
+.collapsible-content { overflow:hidden; max-height:0; transition:max-height 0.4s ease; }
+.collapsible.open .collapsible-content { max-height:2000px; }
+
+/* ─── URGENCY TABLE ─── */
+.urgency-row {
+  display:flex; gap:8px; margin:6px 0;
+  align-items:flex-start;
+}
+.urgency-tag {
+  flex-shrink:0; padding:4px 10px; border-radius:50px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+}
+.tag-ok { background:var(--sage-pale); color:var(--sage-deep); }
+.tag-med { background:#FFF3E0; color:#E08030; }
+.tag-urg { background:#FDF0F3; color:var(--rose-deep); }
+.urgency-text { font-size:13px; color:var(--text-soft); line-height:1.5; flex:1; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:0; height:0; }
+
+/* ─── ANIMATIONS ─── */
+.fade-in { animation: cardIn 0.4s ease forwards; }
+
+/* ─── STAT ROW ─── */
+.stat-row {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:4px 0;
+}
+.stat-box {
+  background:var(--beige); border-radius:var(--radius-sm);
+  padding:10px 8px; text-align:center;
+}
+.stat-val { font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--text); }
+.stat-lab { font-size:10px; color:var(--text-light); font-weight:600; margin-top:2px; }
+
+/* ─── PROGRESS BAR ─── */
+.prog-bar {
+  height:8px; background:var(--beige-warm); border-radius:50px; overflow:hidden;
+  margin:6px 0;
+}
+.prog-fill {
+  height:100%; border-radius:50px;
+  background:linear-gradient(90deg, var(--rose), var(--rose-deep));
+  transition:width 0.6s ease;
+}
+
+/* ─── AUTH ─── */
+#auth-screen {
+  position:fixed; inset:0; z-index:2000;
+  background: linear-gradient(160deg, #FDF0F3 0%, #F5EDE3 50%, #EFF4EE 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px;
+}
+#auth-screen.hide { display:none; }
+.auth-card {
+  width:100%; max-width:380px;
+  background:var(--white); border-radius:var(--radius);
+  padding:32px 24px;
+  box-shadow:0 8px 40px rgba(180,140,140,0.18);
+}
+.auth-flower { font-size:48px; text-align:center; margin-bottom:12px; }
+.auth-title {
+  font-family:'Cormorant Garamond', serif;
+  font-size:28px; font-weight:400; text-align:center;
+  color:var(--text); margin-bottom:4px;
+}
+.auth-sub {
+  font-size:12px; color:var(--text-light); text-align:center;
+  letter-spacing:1.5px; text-transform:uppercase; margin-bottom:24px;
+}
+.auth-tabs {
+  display:flex; background:var(--beige); border-radius:var(--radius-sm);
+  padding:4px; margin-bottom:20px;
+}
+.auth-tab {
+  flex:1; padding:8px; border:none; background:none; cursor:pointer;
+  font-family:'Nunito',sans-serif; font-size:13px; font-weight:600;
+  color:var(--text-soft); border-radius:calc(var(--radius-sm) - 4px);
+  transition:all 0.2s;
+}
+.auth-tab.active { background:var(--white); color:var(--rose-deep); box-shadow:0 2px 8px var(--shadow); }
+.auth-error {
+  background:#FDF0F3; border-left:3px solid var(--rose-deep);
+  border-radius:0 8px 8px 0; padding:10px 12px;
+  font-size:13px; color:var(--rose-deep); margin-bottom:12px; display:none;
+}
+.auth-success {
+  background:#EFF4EE; border-left:3px solid var(--sage-deep);
+  border-radius:0 8px 8px 0; padding:10px 12px;
+  font-size:13px; color:var(--sage-deep); margin-bottom:12px; display:none;
+}
+.user-bar {
+  position:fixed; top:0; right:0; z-index:200;
+  padding:8px 12px; display:flex; align-items:center; gap:8px;
+}
+.user-email {
+  font-size:11px; color:var(--text-light); max-width:120px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.btn-logout {
+  padding:5px 10px; border-radius:50px;
+  border:1.5px solid var(--beige-warm); background:var(--white);
+  font-size:11px; font-weight:600; color:var(--text-light);
+  cursor:pointer;
+}
+.loading-overlay {
+  position:fixed; inset:0; z-index:3000;
+  background:rgba(253,250,246,0.9);
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px;
+}
+.loading-overlay.hide { display:none; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">🌸</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="hide">
+  <div class="auth-card">
+    <div class="auth-flower">🌸</div>
+    <div class="auth-title">Mon Bébé</div>
+    <div class="auth-sub">Guide de votre sage-femme</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Se connecter</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Créer un compte</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-success" id="authSuccess"></div>
+    <div class="input-group">
+      <label class="input-label">Email</label>
+      <input type="email" class="input-field" id="authEmail" placeholder="votre@email.com">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Mot de passe</label>
+      <input type="password" class="input-field" id="authPassword" placeholder="••••••••">
+    </div>
+    <div class="input-group" id="authPrenom" style="display:none">
+      <label class="input-label">Votre prénom</label>
+      <input type="text" class="input-field" id="authPrenomInput" placeholder="Marie">
+    </div>
+    <button class="btn-primary" id="authBtn" style="margin-top:4px">Se connecter</button>
+  </div>
+</div>
+
+<!-- USER BAR -->
+<div class="user-bar" id="userBar" style="display:none">
+  <span class="user-email" id="userEmail"></span>
+  <button class="btn-logout" id="btnLogout">Déconnexion</button>
+</div>
+
+<!-- SPLASH -->
+<div id="splash" style="display:none">
+  <div class="splash-flower">🌸</div>
+  <div class="splash-title">Mon Bébé</div>
+  <div class="splash-sub">Guide de votre sage-femme</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 1 : MOIS PAR MOIS
+  ══════════════════════════════════════════ -->
+  <div class="screen active" id="screen-mois">
+    <div class="page-header">
+      <div class="page-title">🌸 Mois par mois</div>
+      <div class="page-subtitle">Votre guide personnalisé, mois après mois</div>
+    </div>
+
+    <div class="month-strip" id="monthStrip"></div>
+
+    <div id="monthContent"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 2 : ALIMENTATION
+  ══════════════════════════════════════════ -->
+  <div class="screen" id="screen-alim">
+    <div class="page-header">
+      <div class="page-title">🍼 Alimentation</div>
+      <div class="page-subtitle">Allaitement, biberon, diversification — tout y est</div>
+    </div>
+
+    <div style="padding:0 0 8px;">
+      <div class="inner-tabs" style="margin:12px 16px 0;">
+        <button class="inner-tab active" onclick="showAlimTab('allait')">Allaitement</button>
+        <button class="inner-tab" onclick="showAlimTab('biberon')">Biberon</button>
+        <button class="inner-tab" onclick="showAlimTab('divers')">Diversification</button>
+        <button class="inner-tab" onclick="showAlimTab('recettes')">Recettes</button>
+      </div>
+      <div id="alimContent"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 3 : SOMMEIL
+  ══════════════════════════════════════════ -->
+  <div class="screen" id="screen-sommeil">
+    <div class="page-header">
+      <div class="page-title">😴 Sommeil</div>
+      <div class="page-subtitle">Des nuits (un peu) plus douces — je vous guide</div>
+    </div>
+    <div id="sommeilContent"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 4 : SANTÉ & URGENCES
+  ══════════════════════════════════════════ -->
+  <div class="screen" id="screen-sante">
+    <div class="page-header">
+      <div class="page-title">🏥 Santé & Urgences</div>
+      <div class="page-subtitle">Calme, informée et prête — vous avez tout ce qu'il faut</div>
+    </div>
+    <div id="santeContent"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 5 : JOURNAL
+  ══════════════════════════════════════════ -->
+  <div class="screen" id="screen-journal">
+    <div class="page-header">
+      <div class="page-title">📝 Journal de Bébé</div>
+      <div class="page-subtitle">Chaque moment précieux, gardé pour toujours</div>
+    </div>
+
+    <div style="padding:0 0 8px;">
+      <div class="inner-tabs" style="margin:12px 16px 0;">
+        <button class="inner-tab active" onclick="showJournalTab('notes')">Notes</button>
+        <button class="inner-tab" onclick="showJournalTab('croissance')">Croissance</button>
+        <button class="inner-tab" onclick="showJournalTab('vaccins')">Vaccins</button>
+        <button class="inner-tab" onclick="showJournalTab('premiers')">Premières fois</button>
+      </div>
+      <div id="journalContent"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="showScreen('mois',this)">
+      <div class="nav-icon">🌸</div>
+      <div class="nav-label">Mois par mois</div>
+      <div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('alim',this)">
+      <div class="nav-icon">🍼</div>
+      <div class="nav-label">Alimentation</div>
+      <div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('sommeil',this)">
+      <div class="nav-icon">😴</div>
+      <div class="nav-label">Sommeil</div>
+      <div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('sante',this)">
+      <div class="nav-icon">🏥</div>
+      <div class="nav-label">Santé</div>
+      <div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="showScreen('journal',this)">
+      <div class="nav-icon">📝</div>
+      <div class="nav-label">Journal</div>
+      <div class="nav-dot"></div>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  DATA — MOIS PAR MOIS (sage-femme content)
+// ══════════════════════════════════════════════════════════
+const MONTHS = [
+  {
+    num:1, label:"1 mois",
+    poids:"3.5–4.5 kg", taille:"51–55 cm",
+    message:"Bonjour maman 💕 Votre bébé vient d'arriver et vous êtes encore en état de choc — c'est tout à fait normal. Ces premières semaines sont les plus intenses de votre vie. Vous n'avez rien à réussir : juste survivre ensemble, et c'est déjà magnifique. Votre bébé a besoin de vous, pas d'une maman parfaite. Dormez quand il dort, demandez de l'aide, et sachez que ce que vous ressentez — l'amour mêlé d'épuisement et parfois de doutes — est humain et universel.",
+    vaccins:[],
+    competences:[
+      {label:"Vision", desc:"Voit nettement à 20-30 cm — exactement la distance de votre visage quand vous l'allaitez. Il préfère les visages humains à tout autre stimulus. Proposez-lui votre visage souvent, il en a besoin."},
+      {label:"Audition", desc:"Reconnaît déjà votre voix depuis le ventre ! Il se calme en entendant votre voix ou des sons graves comme la voix de papa. Parlez-lui, même si ça vous semble bête."},
+      {label:"Moteur", desc:"Réflexes primitifs actifs : Moro (sursaut), grasping (serre votre doigt), succion. Tenue de tête en tummy time possible quelques secondes — ne vous inquiétez pas si c'est très court."},
+      {label:"Social", desc:"Le sourire est encore réflexe (pas social) — mais il vous regarde intensément. Ce regard fixe, c'est sa façon de communiquer. Répondez-lui en l'imitant."},
+      {label:"Sensoriel", desc:"Préfère les contrastes fort (noir/blanc), puis les couleurs vives. Reconnaît votre odeur et celle de votre lait — c'est pour ça qu'il se calme dans vos bras."}
+    ],
+    sommeil:{
+      total:"16-18h/24h", nuits:"L'éveil nocturne toutes les 2-3h est NORMAL et nécessaire", siestes:"5-7 micro-siestes de 30-60 min",
+      conseils:["Pas de routine fixe encore — son système circadien n'est pas mature avant 3 mois","Il confond jour et nuit : exposez-le à la lumière le jour, gardez la nuit dans le noir et le calme","Swaddling (emmaillotage) : très efficace pour calmer les pleurs et allonger les cycles — enroulez bras le long du corps","Le bruit blanc (aspirateur, sèche-cheveux, appli white noise) rappelle le ventre maternel et aide à l'endormissement","Coucher AVANT les signes de fatigue : bâillements, regard dans le vide, frottage des yeux"]
+    },
+    alimentation:{
+      type:"Allaitement ou lait 1er âge exclusif",
+      freq:"8 à 12 tétées/24h — oui, c'est beaucoup, c'est normal",
+      details:["Biberons : démarrer à 60-90 mL par prise, ajuster selon l'appétit (jamais forcer à finir)","Il grossit en moyenne 200g/semaine ce mois-ci — c'est le meilleur indicateur qu'il mange assez","Selles jaunes granuleuses si allaitement, plus compactes si biberon — les deux sont normaux","Si allaitement : vous devriez entendre des déglutitions, son ventre se creuse, il lâche le sein de lui-même"]
+    },
+    normal:["Les mains serrées en permanence — réflexe normal","Le hoquet après les tétées — fréquent et sans danger","Les petits tremblements des membres — système nerveux immature","Les acnés néonatales entre J10 et J30 — ne rien mettre dessus","Les mains et pieds bleutés (acrocyanose) si froid — réchauffer suffit","Les yeux qui louchent parfois — normal jusqu'à 4 mois"],
+    alarmes:["Fièvre >38°C avant 3 mois = URGENCES immédiatement, sans attendre","Pas de selles depuis 3 jours si allaité (et pas depuis 24h si biberon)","Refus de téter ou boire pendant plus de 6h","Ictère (jaunisse) qui ne régresse pas ou s'aggrave après J5","Fontanelle bombée ou enfoncée","Pleurs inconsolables pendant >3h avec ventre dur"]
+  },
+  {
+    num:2, label:"2 mois",
+    poids:"4.5–5.5 kg", taille:"55–59 cm",
+    message:"Deux mois ! Vous avez survécu au plus dur, et votre bébé aussi. Vous commencez à vous connaître — vous reconnaissez ses différents pleurs, vous anticipez ses besoins. C'est VOUS qui êtes devenue experte de votre enfant, pas les livres. Faites confiance à cet instinct qui se construit chaque jour. Et si vous pleurez parfois sans raison, si vous vous sentez submergée : c'est le baby blues ou les débuts de la dépression post-partum — parlez-en à votre médecin, c'est courageux, pas une faiblesse.",
+    vaccins:["Hexavalent (DT-Polio-CoqPert-Hib-Hépatite B)","Pneumocoque (PCV13)","Méningocoque B"],
+    competences:[
+      {label:"Le sourire social 💛", desc:"Entre 6 et 8 semaines, il apparaît : ce sourire en réponse au vôtre. C'est un des moments les plus forts de la maternité. Il vous reconnaît VOUS spécifiquement. Savourez chaque sourire."},
+      {label:"Vocalises", desc:"Premiers sons : 'aaah', 'ooh' — il découvre sa voix. Répondez-lui dans ces conversations pour l'encourager à continuer."},
+      {label:"Moteur", desc:"Tient la tête quelques secondes en position ventre. Suit un objet du regard sur 180°. Les réflexes primitifs commencent à s'estomper."},
+      {label:"Éveil", desc:"Phases d'éveil plus longues : 1-2h consécutives. Profitez-en pour les interactions face à face."}
+    ],
+    sommeil:{
+      total:"15-17h/24h", nuits:"Séquences de 3-5h possibles pour certains (pas tous!)", siestes:"4-5 siestes",
+      conseils:["Le premier 'grand cycle' de nuit se met souvent en place ce mois : 4-6h d'une traite","Commencez à introduire un rituel du coucher minimal : changer, langer, chanson ou histoire, sein/biberon, coucher","Ne comparez pas : si votre voisine dit que son bébé fait ses nuits, c'est statistiquement rare à cet âge","La régression des 6-8 semaines : juste avant le sourire social, bébé peut se réveiller davantage — c'est passager"]
+    },
+    alimentation:{
+      type:"Lait exclusif",
+      freq:"7 à 10 tétées/24h",
+      details:["Biberons : 120-150 mL par prise, 6-8 fois/jour","La phase de croissance vers 6 semaines : bébé réclame plus pendant 2-3 jours — il programme votre production","Si allaitement : douleurs aux seins normales les premières semaines, mais pas si elles persistent — consultez","Régurgitations fréquentes : normales si bébé prend du poids et n'a pas l'air souffrant"]
+    },
+    normal:["Les régurgitations après tétée — jusqu'à 50% des bébés régurgitent","Les selles plus espacées si allaitement : peut passer à 1 selle toutes les 5-7 jours — normal si selles molles","Les pleurs en fin de journée (coliques)","Le bébé qui 'ne tient pas en place' sur le tapis d'éveil — normalement c'est déjà mieux que le mois dernier !","La marbrure de la peau par le froid — signe de thermorégulation immature"],
+    alarmes:["Pas de sourire social à 8-10 semaines","Aucune vocalise","Hypertonie ou hypotonie marquée (trop rigide ou trop mou)","Prise de poids insuffisante (<150g/semaine)","Fièvre >38°C URGENCES"]
+  },
+  {
+    num:3, label:"3 mois",
+    poids:"5.5–6.5 kg", taille:"59–63 cm",
+    message:"3 mois — un tournant ! Beaucoup de mamans décrivent ce mois comme le début de la 'vraie vie'. Votre bébé dort un peu plus, pleure un peu moins, et rit bientôt. Vous avez traversé les 4e trimestre et vous pouvez être fière. Les coliques s'estompent, les nuits commencent à s'organiser. Vous méritez de sortir, de voir des amies, de vous retrouver un peu — même 1h — sans culpabilité.",
+    vaccins:["Hexavalent 2e dose","Pneumocoque 2e dose","Méningocoque B 2e dose"],
+    competences:[
+      {label:"Rire 😄", desc:"Le rire aux éclats peut apparaître à partir de 3-4 mois. Un des sons les plus beaux que vous entendrez. Chatouiller le ventre, faire des 'bisous soufflés' — il adore."},
+      {label:"Mains", desc:"Découverte des mains : il les observe, les porte à la bouche. C'est de l'exploration sensorielle, pas une faim."},
+      {label:"Moteur", desc:"Tient la tête solidement en position assise soutenue. En tummy time, lève la tête à 45-90°. Pratique le tummy time 3-5x/jour pour renforcer les muscles du cou."},
+      {label:"Communication", desc:"Gazouille beaucoup, commence à articuler des consonnes ('ba', 'ma'). Répond à vos expressions faciales."}
+    ],
+    sommeil:{
+      total:"14-16h/24h", nuits:"Un cycle de 5-8h est possible pour les bébés chanceux", siestes:"3-4 siestes + sieste de consolidation en fin de matinée",
+      conseils:["Le rituel du soir devient efficace : bath → massage → pyjama → tétée/biberon dans le calme → dodo","La sieste du matin vers 9-10h, la grande sieste de l'après-midi 13-15h — c'est la structure qui s'installe","Fenêtre de sommeil : pas plus de 1h30-2h d'éveil entre 2 siestes à cet âge","Si vous pratiquez le co-sleeping : pensez à la sécurité (matelas ferme, pas d'alcool/médicaments, pas d'oreiller encombrant)"]
+    },
+    alimentation:{
+      type:"Lait exclusif — pas encore de diversification",
+      freq:"6 à 8 tétées/24h",
+      details:["Biberons : 150-180 mL par prise","Le bébé mange plus efficacement — les tétées raccourcissent à 10-15 min au lieu de 30-40 : c'est normal !","Phase de croissance à 3 mois : 2-3 jours de réclame intense — répondre à la demande","Attention aux 'phases de plateau' de poids sur 1-2 semaines — normal si bébé actif et contenu"]
+    },
+    normal:["Il pleure encore en fin de journée parfois — les coliques peuvent durer jusqu'à 3-4 mois","Tourne la tête préférentiellement d'un côté (torticolis postural) — kinésithérapie si marqué","Il 'fait l'avion' avec les bras en étant sur le ventre","Les éruptions cutanées séborrhéiques sur le cuir chevelu (croûtes de lait) — huile d'olive + shampooing doux"],
+    alarmes:["Pas de sourires reciproques","Absence totale de vocalises","Ne suit pas des yeux","Tenue de tête inexistante","Parait indifférent à tout stimulus"]
+  },
+  {
+    num:4, label:"4 mois",
+    poids:"6–7 kg", taille:"62–66 cm",
+    message:"4 mois : la régression de sommeil qui fait peur à toutes les mamans. Je vous préviens : c'est brutal, court, et ça passe. C'est le signe que son cerveau fait un bond de développement extraordinaire — il apprend à rouler, à attraper, son sommeil se restructure. Tenez bon, c'est temporaire (2-6 semaines généralement). Profitez du fait qu'il commence à interagir vraiment, à rire, à jouer — c'est tellement gratifiant !",
+    vaccins:[],
+    competences:[
+      {label:"Rouler dos→ventre", desc:"Tentatives de retournement — encouragez-le mais ne laissez jamais sur une surface haute sans surveillance ! Posez-le sur un tapis au sol."},
+      {label:"Attraper", desc:"Commence à attraper volontairement des objets tendus. Proposez des hochets légers, des anneaux. Il porte tout à la bouche — c'est normal et essentiel."},
+      {label:"Vie sociale", desc:"Reconnaît les visages familiers, s'intéresse aux inconnus (curiosité sociale). Rit aux éclats facilement."},
+      {label:"Voix", desc:"Babillage proto-conversationnel : il s'arrête quand vous parlez, reprend quand vous arrêtez. C'est l'apprentissage du dialogue !"}
+    ],
+    sommeil:{
+      total:"14-16h/24h", nuits:"Régression du 4e mois : réveils fréquents qui recommencent", siestes:"3 siestes",
+      conseils:["La régression du 4e mois est biologique — son sommeil passe d'un pattern néonatal à un pattern adulte avec cycles de 45-50 min","Il se réveille entre les cycles au lieu de se rendormir seul — d'où les réveils fréquents","Votre objectif progressif : l'aider à s'endormir dans son lit (pas dans vos bras/sein) pour qu'il puisse se rendormir seul","Méthode douce : présence progressive, shush-pat, ne pas laisser pleurer seul si vous ne le souhaitez pas","Tenir bon sur les rituels même si c'est épuisant — la constance paie"]
+    },
+    alimentation:{
+      type:"Lait exclusif — la diversification débute au plus tôt à 4 mois révolus",
+      freq:"5 à 7 tétées/24h",
+      details:["Biberons : 180-210 mL par prise","Certains bébés montrent de l'intérêt pour la nourriture ce mois — attendez tout de même 4 mois révolus minimum et idéalement 6 mois","Ne mettez jamais de céréales dans le biberon — risque d'étouffement et mauvaise habitude calorique"]
+    },
+    normal:["Régression de sommeil — attendez-vous à des nuits plus difficiles","Met tout en bouche — c'est de l'exploration, lavez régulièrement les jouets","Larmoire ('pleure' sans larmes initialement, puis avec larmes)","Écoulement de salive important — glandes salivaires qui s'activent, pas forcément dents"],
+    alarmes:["Tête toujours penchée d'un côté (torticolis non traité)","Ne rit pas","Ne saisit aucun objet","Hypotonie marquée : 'flasque' dans les bras"]
+  },
+  {
+    num:5, label:"5 mois",
+    poids:"6.5–7.5 kg", taille:"64–68 cm",
+    message:"5 mois et votre bébé devient un vrai petit personnage ! Il a des préférences, il réclame votre attention, il s'énerve quand on lui reprend un jouet. Cette personnalité qui s'affirme, c'est vous qui l'avez nourrie par vos réponses constantes à ses besoins. Vous faites un travail formidable. Si vous avez repris le travail ce mois-ci, sachez que la culpabilité de la séparation est universelle — et que bébé fait preuve d'une résilience formidable.",
+    vaccins:[],
+    competences:[
+      {label:"Assis soutenu", desc:"Tient assis avec soutien dans le dos, quelques secondes sans appui. Installez-le dans un Bumbo (dès 4-5 mois) pour varier les positions."},
+      {label:"Transfert d'objet", desc:"Passe un objet d'une main à l'autre — une coordination impressionnante !"},
+      {label:"Imitation", desc:"Imite les expressions du visage : tirez la langue, ouvrez la bouche — il répond. C'est la base de l'apprentissage social."},
+      {label:"Permanence", desc:"Commence à chercher un jouet qui tombe — la permanence de l'objet se met en place progressivement."}
+    ],
+    sommeil:{
+      total:"14-15h/24h", nuits:"Idéalement 10-11h avec 1-2 réveils", siestes:"2-3 siestes",
+      conseils:["La sieste de l'après-midi se consolide souvent en une 'grande sieste' de 1h30-2h","La sieste du matin (9-10h) reste importante encore quelques mois","Fenêtre d'éveil : 2h entre les siestes environ","Si bébé résiste au coucher : vérifiez qu'il n'est pas trop fatigué (fenêtre d'éveil dépassée) ou pas assez fatigué"]
+    },
+    alimentation:{
+      type:"Lait + début possible de diversification",
+      freq:"5 à 6 tétées/biberon par 24h",
+      details:["Si vous démarrez la diversification à 5 mois : légumes en purée lisse, 1-2 cuillères à café, midi","Légumes à commencer : courgette, carotte, haricots verts — doux, peu allergisants","Le lait reste la base nutritionnelle à 80%, la diversification c'est la 'découverte'","Biberons : 210-240 mL par prise, 5x/jour si diversification débutée"]
+    },
+    normal:["Résistance au dodo — il ne veut pas rater les interactions !","Pleurs quand vous quittez la pièce — angoisse de séparation qui débute","Met les pieds en bouche — souplesse et exploration normales","Selles qui changent si diversification débutée — plus compactes, odeur différente"],
+    alarmes:["Ne tient pas sa tête solidement","Ne réagit pas aux sons","Pas de sourires ni rires","Ne cherche pas à attraper les objets proches"]
+  },
+  {
+    num:6, label:"6 mois",
+    poids:"7–8 kg", taille:"65–69 cm",
+    message:"6 mois — la moitié de la première année ! Vous avez accompli quelque chose d'extraordinaire. Votre bébé est florissant, et vous y êtes pour tout. La diversification alimentaire commence officiellement ce mois pour ceux qui ont attendu. C'est une aventure gustative merveilleuse — ne vous découragez pas si bébé fait la grimace aux premiers légumes, c'est souvent une question d'habituation qui demande parfois 10-15 essais.",
+    vaccins:["Hexavalent 3e dose","Pneumocoque 3e dose","Méningocoque B 3e dose","Rotavirus (oral)"],
+    competences:[
+      {label:"Assis seul", desc:"Commence à tenir assis sans appui quelques secondes (perfectionnement jusqu'à 9 mois). Entourez-le de coussins pour amortir les chutes — elles font partie de l'apprentissage."},
+      {label:"Syllabes", desc:"'Ba-ba', 'ma-ma', 'da-da' — sans encore y associer un sens. Ces proto-mots sont la base du langage."},
+      {label:"Angoisse des 8 mois (précoce)", desc:"Peut apparaître dès 6 mois : méfiance vis-à-vis des inconnus, pleurs quand vous partez. C'est un signe de bon attachement !"},
+      {label:"Moteur", desc:"Se retourne dans les deux sens. Rampe parfois déjà (sur le ventre, en roulant). Certains sont déjà en position de commando."}
+    ],
+    sommeil:{
+      total:"14-15h/24h", nuits:"9-11h consécutives pour les chanceux, avec 1-2 réveils pour les autres", siestes:"2 siestes",
+      conseils:["2 siestes à cet âge : matin (9h-10h30) et après-midi (13h-15h)","Certains consolidés font 1 grande sieste — mais c'est précoce","Le rituel du soir est votre outil le plus puissant : bain tiède (34°C) + massage + pyjama + lecture + sein/biberon + dodo","Si toujours des réveils la nuit : vérifiez qu'il n'est pas trop chaud, que sa sieste d'après-midi se termine avant 16h","Pas de doudou trop volumineux avant 6 mois pour la sécurité"]
+    },
+    alimentation:{
+      type:"Diversification alimentaire + lait",
+      freq:"Lait : 4-5 fois/jour. Solides : 1-2 repas",
+      details:["Repas du midi en premier : légumes mixés lisses (courgette, carotte, haricots verts, panais)","2 semaines plus tard : ajoutez une matière grasse (huile olive, 1 cc) et une source de protéine (viande 10g ou poisson)","Fruits en purée au goûter : pomme, poire, banane — pas d'agrumes encore","Grains : riz, semoule, pain de mie en bouillie — tolérés","Quantités : commencez par 3-4 cc, montez progressivement jusqu'à 100-120g de légumes + 10g protéine"]
+    },
+    normal:["Refus de certains légumes — persistez en proposant plusieurs fois","Selles qui changent avec la diversification","Grincement de gencives — futures dents qui bougent","Sommeil perturbé pendant les poussées dentaires"],
+    alarmes:["Ne tient pas sa tête du tout","Ne sourit pas, pas d'échanges","Ne manifeste aucun intérêt pour les solides (à noter lors du suivi, pas forcément urgent)","Aucun babillage"]
+  },
+  {
+    num:7, label:"7 mois",
+    poids:"7.5–8.5 kg", taille:"67–71 cm",
+    message:"7 mois et votre bébé bouge ! Il rampe, se tourne, attrape tout ce qui est à sa portée. L'heure de babyproofer la maison ! Protégez les angles, les prises électriques, sécurisez les escaliers. Cette phase d'exploration physique est fantastique — laissez-le découvrir dans un espace safe. Plus il explore, plus il développe ses connexions neuronales.",
+    vaccins:[],
+    competences:[
+      {label:"Pincer index-pouce", desc:"La 'pince fine' commence à se développer — il saisit avec le pouce et l'index. Donnez de petites choses à manipuler (pas assez petites pour avaler !)."},
+      {label:"Ramper/4 pattes", desc:"Certains rampent déjà (commando ou 4 pattes), d'autres roulent pour se déplacer. Pas d'inquiétude si pas encore mobile — la marche reste à 12 mois en moyenne."},
+      {label:"'Non' compris", desc:"Commence à comprendre le mot 'non' et certaines intonations. C'est le début de la compréhension du langage, avant la production."},
+      {label:"Permanence de l'objet", desc:"Cache-cache ! Il cherche activement un objet caché sous un tissu. Jouez avec lui — cache-cache et coucou/caché sont ses jeux préférés."}
+    ],
+    sommeil:{
+      total:"14-15h/24h", nuits:"10-11h", siestes:"2 siestes (matin + après-midi)",
+      conseils:["La sieste du matin raccourcit progressivement — 30-45 min suffisent","La grande sieste d'après-midi reste cruciale : 1h30-2h","Si bébé se réveille debout dans son lit et pleure : c'est qu'il ne sait pas encore se rasseoir seul. Apprenez-lui pendant la journée.","Dents qui poussent = nuits perturbées. Donnez de l'ibuprofène si >6 mois et vraiment douloureux (avis médical)."]
+    },
+    alimentation:{
+      type:"2 repas solides + lait",
+      freq:"Lait : 3-4 fois/jour. Midi + Goûter",
+      details:["Textures : on peut passer aux 'grumeaux' progressivement — purée moins lisse, aliments légèrement écrasés","Protéines : viande/poisson 20g/jour max, œuf (jaune puis entier cuit)","Légumineuses : lentilles, pois chiches très bien cuits et mixés — excellents","Introducing légumes amers : brocoli, épinards — persistent si refus, 10+ tentatives avant de conclure un refus","Eau : proposez de l'eau fraîche à chaque repas — apprentissage de la tasse à bec"]
+    },
+    normal:["S'énerve si on lui prend un jouet — sens de la propriété qui émerge","Pleurs à l'endormissement — résistance normale","Ronfle légèrement si rhume — pas pathologique","Morsures pendant l'allaitement — répondez fermement 'non' et interrompez brièvement la tétée"],
+    alarmes:["Ne se retourne pas du tout","Absence totale de babillage","Aucune réaction à l'expression de son prénom","Pas de station assise avec soutien"]
+  },
+  {
+    num:8, label:"8 mois",
+    poids:"8–9 kg", taille:"68–72 cm",
+    message:"8 mois : l'angoisse de séparation est à son pic. Votre bébé pleure quand vous partez même 30 secondes. C'est un signe d'attachement sécure — c'est VOUS qu'il préfère à tout. C'est épuisant, mais c'est profondément beau. Ritualisez les séparations : dites toujours au revoir (ne partez jamais en catimini), rassurez qu'on revient. Il apprendra que les séparations ont une fin.",
+    vaccins:[],
+    competences:[
+      {label:"Angoisse des 8 mois", desc:"Pic d'angoisse de séparation — pleurs dès que vous quittez la pièce. Durée : 2-8 mois (jusqu'à 12-18 mois parfois). Répondez, rassurez, maintenez les rituels."},
+      {label:"Debout avec appui", desc:"Se met debout en se tenant aux barreaux du lit, à la table. Laissez-le faire — son corps sait ce qu'il fait."},
+      {label:"Imitation avancée", desc:"Imite des actions : battre des mains, faire coucou, secouer la tête. Le jeu de l'imitation est précieux pour son développement."},
+      {label:"Compréhension", desc:"Comprend plusieurs mots de routine : 'manger', 'bain', 'dodo'. Parlez-lui beaucoup, nommez les objets, décrivez ce que vous faites."}
+    ],
+    sommeil:{
+      total:"13-15h/24h", nuits:"10-12h", siestes:"2 siestes",
+      conseils:["L'angoisse de séparation perturbe souvent les nuits ce mois — c'est lié, c'est passager","Si bébé refuse de dormir sans vous : séquence d'endormissement avec présence physique progressive","Nuit : si pleurs, attendez 2-3 min avant d'intervenir — il apprend à se rendormir","Ne rallumez jamais la lumière la nuit — ça signalerait que la journée commence"]
+    },
+    alimentation:{
+      type:"3 repas + lait",
+      freq:"Lait : 3x/jour (matin, goûter, soir). Midi + petit-déjeuner + goûter",
+      details:["Petit-déjeuner : bouillie, fruit mixé, lait","Midi : légumes + protéine + féculent + matière grasse","Goûter : fruit + laitage","Textures : morceaux mous écrasables à la langue — introduisez progressivement","Baby-led weaning (BLW) : vous pouvez introduire des morceaux à saisir à la main sous surveillance constante"]
+    },
+    normal:["Régression de sommeil liée à l'angoisse de séparation","Selles plus compactes avec l'augmentation des solides","Constipation possible : augmentez les fruits, les légumes, l'eau","Grincement de dents (bruxisme) nocturne — passager, sans danger"],
+    alarmes:["Aucune imitation de gestes","Pas de pointage du doigt","Ne cherche pas l'interaction","Aucun mot ou proto-mot"]
+  },
+  {
+    num:9, label:"9 mois",
+    poids:"8.5–9.5 kg", taille:"69–73 cm",
+    message:"9 mois : votre bébé se déplace de plus en plus. Il explore, découvre, teste les limites. Ce besoin d'exploration, c'est son moteur d'apprentissage — ne le frénez pas, sécurisez l'environnement. S'il ne marche pas encore à 4 pattes, certains ne ramperont jamais et passeront directement à la marche — c'est tout à fait normal. Chaque bébé a son propre chemin moteur.",
+    vaccins:["Méningocoque C (rattrapage)"],
+    competences:[
+      {label:"Marche à 4 pattes", desc:"La majorité des bébés rampent ou marchent à 4 pattes. Certains font du 'fesse-fesse' (se déplacent assis en sautant). Toutes les formes de déplacement sont valides !"},
+      {label:"Pince pouce-index mature", desc:"Saisit des petits objets avec précision. Activités de manipulation : boîtes à insérer des objets, empiler des anneaux."},
+      {label:"Premier mot / proto-mot", desc:"'Mama', 'dada', 'baba' avec intention. Même si incomplet, c'est le vrai langage qui commence."},
+      {label:"Mémoire", desc:"Se souvient d'événements sur quelques heures. Si vous masquez un objet derrière votre dos, il le cherche activement."}
+    ],
+    sommeil:{
+      total:"13-14h/24h", nuits:"10-12h", siestes:"2 siestes en transition vers 1",
+      conseils:["Certains bébés amorcent la transition vers 1 sieste — c'est précoce mais possible","Signes de transition : résistance à la sieste du matin, nuit raccourcie si trop de sommeil de jour","Si bébé se lève très tôt (5-6h) : coucher plus tôt paradoxalement, pas plus tard","Maintenir une sieste d'après-midi jusqu'à 18 mois minimum"]
+    },
+    alimentation:{
+      type:"3 repas variés + lait",
+      freq:"Lait : 2-3x/jour",
+      details:["Morceaux : légumes cuits fondants, fruits mous en morceaux, pâtes, riz — tout ce qu'il peut écraser avec sa langue","Lait : 500 mL/jour minimum jusqu'à 1 an","Diversification des saveurs : épices douces (cumin, curcuma, herbes), aromates — les bébés diversifiés tôt sont moins néophobes","Eau seule à boire — pas de jus de fruits (même bio = trop sucré)"]
+    },
+    normal:["Tire les cheveux, mord — phase d'exploration sensorielle, cadrer fermement mais sans dramatiser","Constipation lors des changements de texture","Se lève dans son lit et ne sait pas se rasseoir — apprenez-lui pendant la journée","'Fait des caprices' pour manger — phase d'affirmation normale"],
+    alarmes:["Aucune tentative de déplacement autonome","Aucun pointage du doigt","Régression marquée de compétences déjà acquises","Aucune compréhension de mots simples du quotidien"]
+  },
+  {
+    num:10, label:"10 mois",
+    poids:"9–10 kg", taille:"71–75 cm",
+    message:"10 mois et les premiers pas se préparent ! Vous sentez bébé sur le point de marcher — ce moment suspendu où il lâche l'appui et tient 2 secondes debout. Filmez tout. Ces jours sont fugaces. Et si votre bébé n'en est pas là, c'est tout aussi normal — la fourchette de la marche va de 9 à 16 mois.",
+    vaccins:[],
+    competences:[
+      {label:"Cruse les meubles", desc:"Se déplace debout en tenant les meubles (crusing). Ses jambes se renforcent. Chaussettes antidérapantes au sol — pas de chaussures d'intérieur, les pieds nus stimulent les propriocepteurs."},
+      {label:"'Non-non'", desc:"Secoue la tête pour dire non — communication non-verbale importante. Commencez à respecter ses refus non-dommageables (refuse un légume) tout en maintenant les limites nécessaires."},
+      {label:"Jeux symboliques", desc:"Fait 'comme' faire à manger, téléphoner, conduire — imitation des adultes. Le jeu symbolique est un indicateur de développement cognitif excellent."},
+      {label:"2-3 mots", desc:"2-3 mots avec sens clair. Normal si moins — compréhension plus avancée que production à cet âge."}
+    ],
+    sommeil:{
+      total:"13-14h/24h", nuits:"10-12h", siestes:"2 siestes ou 1 longue",
+      conseils:["Maintenir 2 siestes si bébé a encore besoin","Si transition vers 1 sieste : sieste vers 12h-13h, 1h30-2h","Le soir, coucher entre 19h et 20h30 — pas trop tard pour éviter le surcroît de fatigue","Si bébé se réveille et pleure longuement la nuit : vérifier dents, maladie, changement environnemental"]
+    },
+    alimentation:{
+      type:"3 repas famille + lait",
+      freq:"Lait : 2x/jour (matin et soir)",
+      details:["Il peut commencer à manger 'comme vous' — adaptez les textures, évitez sel/sucre ajoutés","Morceaux : viande hachée, poisson émietté, pâtes, légumes en petits cubes","Autonomie : proposez une cuillère, acceptez le désordre — c'est l'apprentissage","Sel : pas avant 1 an (reins immatures). Sucre : pareil — retardez le goût sucré le plus possible"]
+    },
+    normal:["Mange avec les mains — c'est excellent pour la motricité fine et l'autonomie","Jette les aliments par terre — exploration de la gravité et communication","Refuse certains repas — n'insistez jamais, proposez à nouveau plus tard","Brutalité dans les jeux — sans intention de faire mal, à cadrer doucement"],
+    alarmes:["Ne se tient pas debout avec appui","Aucun geste communicatif (pointer, faire coucou)","Aucun mot ni proto-mot","Perd des compétences acquises"]
+  },
+  {
+    num:11, label:"11 mois",
+    poids:"9.5–10.5 kg", taille:"72–76 cm",
+    message:"11 mois — bébé est presque un 'grand' ! Ce mois est souvent intense émotionnellement pour les mamans : l'anniversaire approche, on réalise que ce petit nourrisson vulnérable est devenu un être qui marche, qui communique, qui a une personnalité. Vous avez fait ça. Ensemble. Préparez-vous à pleurer le jour J — de joie, de fierté, peut-être de nostalgie. C'est normal et beau.",
+    vaccins:[],
+    competences:[
+      {label:"Premiers pas", desc:"Beaucoup font leurs premiers pas ce mois ! Entre 9 et 16 mois est normal. Les premiers pas sont hésitants, les chutes fréquentes — encouragez sans stresser."},
+      {label:"5-10 mots", desc:"5 à 10 mots avec sens, parfois plus. Comprend des phrases simples : 'donne-moi', 'où est papa ?', 'on y va !'"},
+      {label:"Jeu symbolique riche", desc:"Nourrit la poupée, fait semblant de dormir, imite les gestes ménagers. Jouez avec lui — cette créativité précoce est précieuse."},
+      {label:"Tri d'objets", desc:"Commence à trier par forme, à insérer des formes dans des encastrements — logique spatiale déjà présente."}
+    ],
+    sommeil:{
+      total:"13-14h/24h", nuits:"10-12h", siestes:"1-2 siestes",
+      conseils:["Beaucoup font la transition vers 1 sieste d'après-midi ce mois","La sieste unique : idéalement 12h-14h, durée 1h30-2h","Si trop courte : chambre assez sombre, bruit ambiant constant (ventilateur, white noise)","Coucher du soir : maintenir 19h-20h"]
+    },
+    alimentation:{
+      type:"3 repas variés + lait de suite",
+      freq:"Lait : 2x/jour ou moins",
+      details:["Laitage : yaourts entiers natures, fromage — excellents apports calciques","Légumineuses 2x/semaine : lentilles, pois chiches, haricots","Textures : quasi adulte, encore sans sel ni sucre","Vitamines D : continuez la supplémentation jusqu'à 2-3 ans","À 11 mois vous pouvez intégrer l'œuf entier cuit, les fruits à coque mixés (attention allergies)"]
+    },
+    normal:["Phases d'opposition sur les repas — totalement normales","Désintérêt pour le lait au profit des solides — ok si apports calciques autres","Chutes fréquentes dans les apprentissages moteurs","Hyperactivité apparente — cerveau en pleine ébullition"],
+    alarmes:["Aucun mot à 11 mois","Ne montre pas du doigt","Ne fait pas 'au revoir'","Régression de compétences acquises","Aucune imitation"]
+  },
+  {
+    num:12, label:"12 mois",
+    poids:"9.5–11 kg", taille:"73–78 cm",
+    message:"Un an 🌸 Vous avez fait UNE ANNÉE. Vous avez traversé les nuits sans sommeil, les pleurs inconsolables, les doutes à 3h du matin, les poussées dentaires, les maladies, les angoisses — et vous êtes là, avec un bébé épanoui qui vous regarde avec des yeux brillants. Ce n'est pas de la chance, c'est votre amour et votre présence. Bonne anniversaire à vous deux — vous le méritez autant que votre bébé.",
+    vaccins:["ROR (Rougeole-Oreillons-Rubéole) 1re dose","Méningocoque C","Varicelle (recommandé)"],
+    competences:[
+      {label:"Marche autonome", desc:"60% des bébés marchent seuls à 12 mois. Les autres sont tout aussi normaux ! La marche autonome peut aller jusqu'à 15-16 mois sans pathologie."},
+      {label:"10-20 mots", desc:"10 à 20 mots avec sens. Si moins, c'est la compréhension qui compte plus : comprend-il des phrases simples ? Suit-il des consignes simples ?"},
+      {label:"Désigne du doigt", desc:"Le pointage proto-déclaratif (montrer pour partager) est un marqueur développemental important. S'il pointe des choses pour vous les montrer, c'est excellent."},
+      {label:"Coopération sociale", desc:"Donne des objets, participe à s'habiller (tend le bras), aide à ranger. Ce sens de la coopération est magnifique."}
+    ],
+    sommeil:{
+      total:"12-14h/24h", nuits:"10-12h", siestes:"1-2 siestes",
+      conseils:["Certains ont encore 2 siestes, d'autres 1 — les deux sont normaux à 12 mois","1 sieste unique vers 12h30-14h00","Nuit : coucher 19h30-20h00, lever naturel 7h-8h","Les 'appels' nocturnes sans pathologie : vous pouvez maintenant laisser 5-10 min avant d'intervenir si bébé est sain","Continuez les rituels — ils seront utiles encore longtemps"]
+    },
+    alimentation:{
+      type:"Alimentation variée famille + lait de croissance",
+      freq:"Lait : 1-2x/jour (250-500 mL)",
+      details:["Lait de vache entier pasteurisé possible à 1 an (en France : lait de croissance recommandé jusqu'à 3 ans pour les apports en fer)","3 repas + 1 goûter — structure adulte","Textures adultes adaptées : encore sans sel/sucre ajoutés idéalement","Allergie aux arachides : si non encore introduits, proposez ce mois (beurre de cacahuète sur pain) sous surveillance","Diversité alimentaire : objectif 30 espèces végétales différentes par semaine pour le microbiome"]
+    },
+    normal:["Ne marche pas encore — normal jusqu'à 16 mois","Peu de mots — normal si compréhension bonne et pointage présent","Mange moins qu'avant — le rythme de croissance ralentit, l'appétit suit","Ne boit plus le biberon volontiers — transition vers tasse fine"],
+    alarmes:["Aucun mot à 12 mois","Pas de pointage du doigt","Ne suit pas du regard quand on pointe","Perte de compétences acquises (langage, moteur, social) — consulter rapidement","Pas de marche à 18 mois — consultation neurologique recommandée"]
+  }
+];
+
+// ══════════════════════════════════════════════════════════
+//  DATA — ALIMENTATION
+// ══════════════════════════════════════════════════════════
+const ALIM_DATA = {
+  allait:`
+    <div class="sf-message">
+      <span class="sf-avatar">👩‍⚕️</span>
+      <div class="sf-name">Votre sage-femme</div>
+      <div class="sf-text">L'allaitement est le plus beau voyage — et aussi le plus exigeant. Ce que personne ne vous dit : les premières 2-4 semaines sont difficiles. Après ? Ça devient souvent la chose la plus simple du monde. Tenez bon si vous le souhaitez.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🤱</span><div class="card-title">Positions clés</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">1</div><div><b>Madone classique :</b> bébé en travers de votre ventre, face à vous, ventre contre ventre. Tête dans le creux du coude. La plus naturelle pour débuter.</div></li>
+          <li class="info-item"><div class="info-bullet">2</div><div><b>Madone inversée :</b> votre main soutient la tête de bébé (côté opposé). Excellent pour guider l'attache au début ou si bébé a du mal.</div></li>
+          <li class="info-item"><div class="info-bullet">3</div><div><b>Football américain :</b> bébé sous votre bras, corps le long de votre flanc, tête devant le sein. Idéal césarienne (pas de pression sur l'abdomen) ou seins volumineux.</div></li>
+          <li class="info-item"><div class="info-bullet">4</div><div><b>Allongée côte à côte :</b> pour les tétées de nuit. Vous et bébé allongés face à face. Moins fatiguant pour les nuits.</div></li>
+          <li class="info-item"><div class="info-bullet">5</div><div><b>Biologique/Laid-back :</b> vous semi-allongée (45°), bébé sur votre ventre. Utilise les réflexes primitifs — excellent pour les tout petits ou si attache difficile.</div></li>
+        </ul>
+        <div class="divider"></div>
+        <div class="section-label">La bonne attache — crucial !</div>
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">✓</div><div>Bouche grande ouverte (comme un bâillement), pas juste le mamelon mais toute l'aréole en bas</div></li>
+          <li class="info-item"><div class="info-bullet">✓</div><div>Menton collé au sein, nez légèrement dégagé</div></li>
+          <li class="info-item"><div class="info-bullet">✓</div><div>Vous entendez des déglutitions rythmiques</div></li>
+          <li class="info-item"><div class="info-bullet">✓</div><div>Pas de douleur au-delà des 30 premières secondes</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div>Si ça fait mal : retirez avec le petit doigt et recommencez. Une mauvaise attache persistante = crevasses garanties.</div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">⏱️</span><div class="card-title">Fréquence & durée</div></div>
+      <div class="card-body">
+        <div class="alert-ok"><div class="alert-title">✅ Ce qui est normal</div><div class="alert-text">0-6 semaines : <b>8 à 12 tétées/24h</b> — oui, c'est beaucoup. Non, vous n'avez pas assez de lait.<br>6 sem à 3 mois : 8 à 10 tétées/24h<br>3 à 6 mois : 6 à 8 tétées/24h<br>6 à 12 mois : 5 à 6 tétées/24h avec diversification</div></div>
+        <div class="alert-warn"><div class="alert-title">⚡ Mon conseil terrain</div><div class="alert-text">Allaitez <b>à la demande, sans regarder l'horloge</b>. Les pleurs ne signifient pas toujours la faim mais répondre = réguler la production. La règle d'or : si bébé grossit et mouille 6+ couches/jour, il mange assez.</div></div>
+        <ul class="info-list" style="margin-top:12px">
+          <li class="info-item"><div class="info-bullet">💡</div><div>Durée d'une tétée : 5 à 30 min selon bébé. Ce n'est pas la durée qui compte, c'est l'efficacité.</div></li>
+          <li class="info-item"><div class="info-bullet">💡</div><div>Videz toujours le premier sein avant de proposer le second — bébé obtient le lait de fin de tétée riche en graisses.</div></li>
+          <li class="info-item"><div class="info-bullet">💡</div><div>Phases d'accélération (growth spurts) : 3 sem, 6 sem, 3 mois — bébé réclame beaucoup plus 2-3 jours. Répondez — vous programmez plus de lait.</div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🩹</span><div class="card-title">Problèmes fréquents</div></div>
+      <div class="card-body">
+        <div class="section-label">Engorgement</div>
+        <div class="alert-warn"><div class="alert-text">Seins très durs, douloureux, chauds entre J3 et J5. <b>À faire :</b> tétées fréquentes, compresses froides entre les tétées, légère pression vers le mamelon pour ramollir l'aréole avant la tétée. Ne pas pomper excessivement.</div></div>
+        <div class="divider"></div>
+        <div class="section-label">Crevasses</div>
+        <div class="alert-warn"><div class="alert-text">Causées par une mauvaise attache à 95%. <b>À faire :</b> corriger l'attache EN PREMIER. Appliquer du lait maternel sur le mamelon après la tétée, laisser sécher à l'air. Lanoline pure si très douloureux. Ne pas arrêter l'allaitement — ça guérit.</div></div>
+        <div class="divider"></div>
+        <div class="section-label">Mastite (lymphangite)</div>
+        <div class="alert-urg"><div class="alert-text">Zona rouge sur le sein + fièvre + douleur intense = consulter sous 24h. <b>Continuez d'allaiter du côté atteint</b> (le lait n'est pas infecté) — c'est le meilleur traitement. Antibiotiques si besoin.</div></div>
+        <div class="divider"></div>
+        <div class="section-label">Montée de lait</div>
+        <div class="alert-ok"><div class="alert-text">Arrive J2-J5. Seins lourds, fourmillements, parfois fièvre légère 24h (la "fièvre de lait"). <b>Normal.</b> Allaitez souvent — la montée régule d'elle-même en 48-72h.</div></div>
+      </div>
+    </div>
+  `,
+  biberon:`
+    <div class="sf-message">
+      <span class="sf-avatar">👩‍⚕️</span>
+      <div class="sf-name">Votre sage-femme</div>
+      <div class="sf-text">Biberon ou allaitement — vous nourrissez votre bébé avec amour. C'est ce qui compte. Voici tout ce qu'il faut savoir pour que le biberon soit parfait.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📊</span><div class="card-title">Quantités par âge</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">1</div><div><b>Naissance–1 mois :</b> 60-90 mL par biberon, 8-10 biberons/24h</div></li>
+          <li class="info-item"><div class="info-bullet">2</div><div><b>1-2 mois :</b> 90-120 mL, 7-8 biberons/24h</div></li>
+          <li class="info-item"><div class="info-bullet">3</div><div><b>2-3 mois :</b> 120-150 mL, 6-7 biberons/24h</div></li>
+          <li class="info-item"><div class="info-bullet">4</div><div><b>3-4 mois :</b> 150-180 mL, 5-6 biberons/24h</div></li>
+          <li class="info-item"><div class="info-bullet">5</div><div><b>4-6 mois :</b> 180-210 mL, 5 biberons/24h</div></li>
+          <li class="info-item"><div class="info-bullet">6</div><div><b>6-9 mois :</b> 210-240 mL, 4 biberons/24h (diversification)</div></li>
+          <li class="info-item"><div class="info-bullet">7</div><div><b>9-12 mois :</b> 240 mL, 3 biberons/24h</div></li>
+        </ul>
+        <div class="alert-ok" style="margin-top:12px"><div class="alert-title">✅ Règle d'or</div><div class="alert-text">Ne jamais forcer bébé à finir son biberon. Ces quantités sont des repères — votre bébé sait quand il est rassasié. Respectez ça dès le début pour un rapport sain à la nourriture.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🥛</span><div class="card-title">Quel lait, comment préparer</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">1</div><div><b>Lait 1er âge :</b> de la naissance à 6 mois. Choisissez une marque et ne changez pas sans raison — les changements fréquents perturbent.</div></li>
+          <li class="info-item"><div class="info-bullet">2</div><div><b>Lait 2e âge :</b> de 6 mois à 1 an, avec diversification. Plus riche en fer.</div></li>
+          <li class="info-item"><div class="info-bullet">3</div><div><b>Lait de croissance :</b> 1 à 3 ans. En France, recommandé vs lait de vache entier pour les apports en fer et DHA.</div></li>
+          <li class="info-item"><div class="info-bullet">4</div><div><b>Eau :</b> eau du robinet en France est parfaite (si récente installation saine), ou eau de source faible en minéraux.</div></li>
+          <li class="info-item"><div class="info-bullet">5</div><div><b>Température :</b> 37°C idéalement (température corporelle) — testez sur le poignet, quelques gouttes. Il peut aussi accepter à température ambiante.</div></li>
+          <li class="info-item"><div class="info-bullet">6</div><div><b>Préparation :</b> eau + poudre dans cet ordre. 1 mesure rase pour 30 mL d'eau (standard). Secouer énergiquement.</div></li>
+          <li class="info-item"><div class="info-bullet">7</div><div><b>Conservation :</b> biberon préparé = à consommer dans l'heure à température ambiante, ou 24h au réfrigérateur. Jamais de micro-ondes (points chauds).</div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💕</span><div class="card-title">Technique du biberon</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">✓</div><div>Bébé semi-assis (jamais allongé à plat — risque d'otite)</div></li>
+          <li class="info-item"><div class="info-bullet">✓</div><div>Biberon légèrement incliné — tétine toujours pleine pour éviter les bulles d'air</div></li>
+          <li class="info-item"><div class="info-bullet">✓</div><div>Pauses régulières pour roter — toutes les 60-80 mL environ</div></li>
+          <li class="info-item"><div class="info-bullet">✓</div><div>Contact visuel et peau à peau autant que possible — le biberon n'empêche pas l'attachement</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div>Ne jamais laisser bébé seul avec son biberon</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div>Jamais de biberon couché dans le lit (caries dès les premières dents + risque d'étouffement)</div></li>
+        </ul>
+      </div>
+    </div>
+  `,
+  divers:`
+    <div class="sf-message">
+      <span class="sf-avatar">👩‍⚕️</span>
+      <div class="sf-name">Votre sage-femme</div>
+      <div class="sf-text">La diversification, c'est l'aventure des saveurs. Mon conseil le plus important : détendez-vous. Bébé peut refuser 15 fois le même aliment avant de l'accepter. Ce n'est pas un échec, c'est neurologique. La fenêtre d'introduction est longue — prenez le temps.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📅</span><div class="card-title">Calendrier de diversification</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">4-6m</div><div><b>Légumes mixés lisses :</b> courgette, carotte, haricots verts, panais, pomme de terre. 1 aliment nouveau tous les 3 jours pour détecter les allergies.</div></li>
+          <li class="info-item"><div class="info-bullet">6m</div><div><b>Fruits en purée :</b> pomme, poire, banane, pêche. Ajouter matière grasse (huile olive, beurre). Protéines : viande/poisson (10g/j), œuf jaune.</div></li>
+          <li class="info-item"><div class="info-bullet">7m</div><div><b>Féculents :</b> semoule, riz, pain. Légumineuses mixées : lentilles corail. Épices douces. Gruyère râpé en petite quantité.</div></li>
+          <li class="info-item"><div class="info-bullet">8m</div><div><b>Morceaux mous :</b> légumes fondants en petits cubes, fruits mous. Poisson émietté. Yaourt nature entier.</div></li>
+          <li class="info-item"><div class="info-bullet">9m</div><div><b>Œuf entier cuit.</b> Diversification des textures accélérée. Fromage blanc, fromage râpé. Pâtes molles.</div></li>
+          <li class="info-item"><div class="info-bullet">10m</div><div><b>Autonomie :</b> morceaux à la main, cuillère guidée. Légumineuses entières si bien cuites.</div></li>
+          <li class="info-item"><div class="info-bullet">12m</div><div><b>Table familiale :</b> tout ce que vous mangez, adapté en texture, sans sel/sucre ajoutés. Arachides sous surveillance.</div></li>
+        </ul>
+        <div class="divider"></div>
+        <div class="section-label">🚫 Aliments INTERDITS avant 1 an</div>
+        <ul class="info-list">
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Miel :</b> risque de botulisme infantile — les spores résistent à la cuisson</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Sel ajouté :</b> reins non matures, surcharge sodique</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Sucre, jus de fruit, sodas :</b> habituent au sucre, caries, obésité</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Lait de vache entier comme boisson :</b> avant 1 an (trop pauvre en fer, trop riche en protéines)</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Charcuterie, viandes fumées :</b> trop salées, nitrites</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Poissons à haute teneur en mercure :</b> thon rouge, espadon, requin</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Fromages au lait cru, œufs crus, viande crue :</b> risque bactérien (listéria)</div></li>
+          <li class="info-item"><div class="info-bullet">✗</div><div><b>Petits aliments durs ronds :</b> raisins entiers, tomates cerises entières, noix — risque d'étouffement</div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🍽️</span><div class="card-title">Signes faim vs satiété</div></div>
+      <div class="card-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-val">🙋</div><div class="stat-lab">Faim</div></div>
+          <div class="stat-box"><div class="stat-val">😌</div><div class="stat-lab">Rassasié</div></div>
+        </div>
+        <ul class="info-list" style="margin-top:12px">
+          <li class="info-item"><div class="info-bullet">🍽</div><div><b>Faim :</b> ouvre la bouche à la cuillère, se penche vers la nourriture, mange rapidement, pleure si pause trop longue</div></li>
+          <li class="info-item"><div class="info-bullet">🛑</div><div><b>Satiété :</b> détourne la tête, ferme la bouche, crache la nourriture, joue avec la cuillère, se désintéresse</div></li>
+        </ul>
+        <div class="alert-ok" style="margin-top:12px"><div class="alert-title">✅ Règle absolue</div><div class="alert-text">Ne jamais forcer bébé à finir son assiette. Respecter les signaux de satiété dès le début est le meilleur cadeau que vous puissiez lui faire pour son rapport à la nourriture à vie.</div></div>
+      </div>
+    </div>
+  `,
+  recettes:`
+    <div class="sf-message">
+      <span class="sf-avatar">👩‍⚕️</span>
+      <div class="sf-name">Votre sage-femme</div>
+      <div class="sf-text">Mes recettes sont simples, rapides, et vraiment appréciées. Pas de gadgets, pas de livres de cuisine — juste des bases nutritionnelles solides avec des saveurs vraies.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🥕</span><div class="card-title">Recettes 4-6 mois</div></div>
+      <div class="card-body">
+        <div class="recipe"><div class="recipe-title">Purée courgette-patate douce (bases)</div><div class="recipe-text">150g courgette + 100g patate douce épluchées, en cubes → cuire à la vapeur 15-20 min → mixer avec 3-4 c. à soupe d'eau de cuisson + 1 c. à café d'huile d'olive. Texture: très lisse. Se conserve 24h réfrigérateur.</div></div>
+        <div class="recipe"><div class="recipe-title">Purée carotte-panais</div><div class="recipe-text">200g carottes + 100g panais épluchés → vapeur 20 min → mixer très lisse + 1 cc huile colza. Sucré naturel, très apprécié. Idéal pour débuter.</div></div>
+        <div class="recipe"><div class="recipe-title">Compote pomme-poire sans sucre</div><div class="recipe-text">1 pomme + 1 poire épluchées, épépinées → 10 min à feu doux avec 2 c. à soupe d'eau → mixer. Peut servir à enrichir une purée de légumes fade.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🍲</span><div class="card-title">Recettes 6-9 mois</div></div>
+      <div class="card-body">
+        <div class="recipe"><div class="recipe-title">Velouté poireaux-pomme de terre-brocoli</div><div class="recipe-text">1 poireau + 200g p. de terre + 100g brocoli → cuire à l'eau 20 min → mixer. Ajouter 30g poulet haché cuit, 1 cc beurre. Texture semi-lisse avec petits grumeaux progressivement.</div></div>
+        <div class="recipe"><div class="recipe-title">Lentilles corail-carotte</div><div class="recipe-text">50g lentilles corail rincées + 200g carottes → cuire ensemble 25 min dans 500 mL d'eau + une pincée de curcuma → mixer. Source de fer excellente. Facile à congeler en petits pots.</div></div>
+        <div class="recipe"><div class="recipe-title">Pavé de saumon vapeur-purée petits pois</div><div class="recipe-text">80g saumon frais vapeur 8 min → émietter, vérifier absence d'arêtes. Petits pois surgelés cuits + mixés très lisse + 1 cc huile olive. Mélanger. Oméga-3 pour le cerveau !</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🥑</span><div class="card-title">Recettes 9-12 mois</div></div>
+      <div class="card-body">
+        <div class="recipe"><div class="recipe-title">Mini galettes de courgettes</div><div class="recipe-text">1 courgette râpée essorée + 1 œuf entier + 2 c. à soupe de semoule de blé → mélanger → former des galettes → poêle légèrement huilée 3 min chaque côté. Morceaux à saisir à la main, parfait pour le baby-led weaning.</div></div>
+        <div class="recipe"><div class="recipe-title">Purée avocat-banane</div><div class="recipe-text">½ avocat mûr + ¼ banane → écraser à la fourchette. Prêt en 2 min. Ultra riche en bons lipides et potassium. Idéal collation ou petit-déjeuner.</div></div>
+        <div class="recipe"><div class="recipe-title">Pâtes bolognaise bébé</div><div class="recipe-text">50g bœuf haché cuit + 100g tomates pelées en dés (sans sel) cuites 15 min + 1 cc huile olive + herbes. Mélanger avec pâtes coquillettes très cuites. Morceaux à la fourchette ou écrasés selon l'âge.</div></div>
+      </div>
+    </div>
+  `
+};
+
+// ══════════════════════════════════════════════════════════
+//  DATA — SOMMEIL
+// ══════════════════════════════════════════════════════════
+const SOMMEIL_HTML = `
+  <div class="sf-message">
+    <span class="sf-avatar">👩‍⚕️</span>
+    <div class="sf-name">Votre sage-femme — message personnel</div>
+    <div class="sf-text">Le sommeil de bébé est le sujet qui inquiète le plus les nouvelles mamans. Je vous dis la vérité : il n'y a pas de méthode universelle. Il y a votre bébé, votre famille, vos valeurs. Mais il y a des bases scientifiques sur le sommeil que je vais vous donner.</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🔬</span><div class="card-title">Le sommeil du nourrisson</div></div>
+    <div class="card-body">
+      <ul class="info-list">
+        <li class="info-item"><div class="info-bullet">💡</div><div><b>Cycles courts :</b> le nourrisson a des cycles de sommeil de 45-50 min (vs 90 min adulte). Il se réveille naturellement entre chaque cycle — normal !</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div><b>Sommeil paradoxal dominant :</b> 50% de sommeil paradoxal chez le nourrisson (vs 20% adulte). C'est pour le développement neurologique — c'est pour ça qu'il bouge, grimace, sursaute pendant le sommeil.</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div><b>Rythme circadien :</b> immature jusqu'à 3 mois. Avant ça, il ne fait pas la différence jour/nuit — c'est biologique, pas une erreur.</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div><b>"Faire ses nuits"</b> signifie médicalement 5h consécutives. Votre voisine qui dit que son bébé de 6 semaines "fait ses nuits" — biologiquement peu probable.</div></li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">📅</span><div class="card-title">Rythmes par âge</div></div>
+    <div class="card-body">
+      <ul class="info-list">
+        <li class="info-item"><div class="info-bullet">0-1m</div><div>16-18h/24h — pas de différence jour/nuit. Tétées toutes les 2-3h.</div></li>
+        <li class="info-item"><div class="info-bullet">2-3m</div><div>15-16h/24h — premiers cycles de 3-5h la nuit. 4-5 siestes.</div></li>
+        <li class="info-item"><div class="info-bullet">4-6m</div><div>14-15h/24h — nuit : 6-8h puis réveil(s). 3-4 siestes. Régression du 4e mois.</div></li>
+        <li class="info-item"><div class="info-bullet">6-9m</div><div>14-15h/24h — nuit : 9-11h avec 1-2 réveils possible. 2-3 siestes.</div></li>
+        <li class="info-item"><div class="info-bullet">9-12m</div><div>13-14h/24h — nuit 10-12h. 1-2 siestes. Transition vers 1 sieste pour certains.</div></li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🌙</span><div class="card-title">Rituel du soir efficace</div></div>
+    <div class="card-body">
+      <div class="section-label">La séquence que je recommande à toutes mes familles</div>
+      <ul class="info-list">
+        <li class="info-item"><div class="info-bullet">1</div><div><b>Bain tiède 34-36°C</b> — 10-15 min. La chute de température après le bain déclenche le sommeil physiologiquement.</div></li>
+        <li class="info-item"><div class="info-bullet">2</div><div><b>Massage doux</b> — 5-10 min. Huile d'amande douce sur le corps. Toucher = ocytocine = calme.</div></li>
+        <li class="info-item"><div class="info-bullet">3</div><div><b>Pyjama + sac de couchage</b> — température constante, sensation d'enveloppement sécurisant.</div></li>
+        <li class="info-item"><div class="info-bullet">4</div><div><b>Lumière très tamisée</b> — pas de lumière vive après le bain. La mélatonine se déclenche dans le noir.</div></li>
+        <li class="info-item"><div class="info-bullet">5</div><div><b>Tétée/biberon calme</b> — dans votre bras, dans la pénombre. Pas de jeux, pas d'écran.</div></li>
+        <li class="info-item"><div class="info-bullet">6</div><div><b>Coucher éveillé mais somnolent</b> — l'objectif à terme : qu'il s'endorme dans son lit, pas dans vos bras. Progression douce.</div></li>
+        <li class="info-item"><div class="info-bullet">7</div><div><b>Son rituel</b> — même chanson, même phrase, même ordre CHAQUE SOIR. La constance crée la sécurité.</div></li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">⚡</span><div class="card-title">Régressions de sommeil</div></div>
+    <div class="card-body">
+      <ul class="info-list">
+        <li class="info-item"><div class="info-bullet">6sem</div><div><b>6-8 semaines :</b> juste avant le sourire social. 1-2 semaines difficiles. Tient bon — c'est neurologique.</div></li>
+        <li class="info-item"><div class="info-bullet">4m</div><div><b>4 mois :</b> la grande, la vraie. Réorganisation totale du sommeil (cycles adultes). 2-6 semaines. Maintenez les rituels absolument.</div></li>
+        <li class="info-item"><div class="info-bullet">8m</div><div><b>8-9 mois :</b> liée à l'angoisse de séparation et aux grandes acquisitions motrices. 2-4 semaines.</div></li>
+        <li class="info-item"><div class="info-bullet">12m</div><div><b>12 mois :</b> liée à l'apprentissage de la marche. Le cerveau tourne à plein régime même la nuit. 2-4 semaines.</div></li>
+      </ul>
+      <div class="alert-ok" style="margin-top:12px"><div class="alert-title">✅ Mon mantra pour les régressions</div><div class="alert-text">"C'est temporaire. Mon bébé fait un bond. Les rituels sont mon ancre." Maintenez la structure, soyez flexibles sur les besoins de réassurance. Ça passe toujours.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">💕</span><div class="card-title">Pour vous, maman épuisée</div></div>
+    <div class="card-body">
+      <div class="alert-warn"><div class="alert-title">⚠️ La privation de sommeil est réelle</div><div class="alert-text">Ce n'est pas dans votre tête. La privation de sommeil chronique a des effets cognitifs documentés. Vous n'êtes pas en train de "faire semblant" d'être fatiguée. C'est réel et difficile.</div></div>
+      <ul class="info-list" style="margin-top:12px">
+        <li class="info-item"><div class="info-bullet">💡</div><div>"Dormez quand bébé dort" — oui, mais c'est plus facile à dire qu'à faire. Visez au moins 1 récupération par jour de 20-30 min.</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div>Alternez les nuits avec votre partenaire si vous donnez le biberon — vous avez droit à une nuit complète de temps en temps.</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div>Si vous allaitez : le partenaire peut prendre bébé dès le réveil (7h) pendant que vous récupérez 2h de sommeil — c'est précieux.</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div>Ne refusez pas l'aide proposée pour les tâches ménagères — chaque heure récupérée compte.</div></li>
+        <li class="info-item"><div class="info-bullet">💡</div><div>Si vous êtes au bout du rouleau et que vous avez des pensées sombres : parlez-en à votre médecin. La dépression post-partum se traite. Vous n'êtes pas seule.</div></li>
+      </ul>
+    </div>
+  </div>
+`;
+
+// ══════════════════════════════════════════════════════════
+//  DATA — SANTÉ
+// ══════════════════════════════════════════════════════════
+const SANTE_HTML = `
+  <div class="sf-message">
+    <span class="sf-avatar">👩‍⚕️</span>
+    <div class="sf-name">Votre sage-femme</div>
+    <div class="sf-text">Cette section est votre référence calme pour les moments de stress. Imprimez le tableau des urgences, gardez ce guide accessible. Mais d'abord : la grande majorité des alarmes de nuit se révèlent bénignes. Respirez, observez, puis agissez.</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🌡️</span><div class="card-title">Fièvre : que faire</div></div>
+    <div class="card-body">
+      <div class="section-label">Température normale : 36.5°C - 37.5°C</div>
+      <div class="alert-urg"><div class="alert-title">🆘 URGENCES IMMÉDIATES — appelez le 15</div><div class="alert-text"><b>Bébé < 3 mois + fièvre ≥ 38°C</b> : urgences sans attendre, même la nuit. Le nourrisson < 3 mois ne peut pas réguler une infection — c'est une urgence pédiatrique réelle.</div></div>
+      <div class="alert-warn"><div class="alert-title">📞 Appeler médecin sous 24h</div><div class="alert-text">3-6 mois + fièvre ≥ 38°C<br>>6 mois + fièvre ≥ 39°C persistant plus de 48h<br>Fièvre + refus de s'alimenter + apathie<br>Fièvre + raideur de nuque</div></div>
+      <div class="alert-ok"><div class="alert-title">✅ À faire à la maison</div><div class="alert-text">- Déshabiller partiellement bébé (pas de chaussettes ni pull)<br>- Proposer à boire souvent (tétées ou eau si diversifié)<br>- Paracétamol : 15 mg/kg toutes les 6h (voir tableau dosage)<br>- Température entre 38° et 39°C sans autre signe : surveiller à domicile<br>- Pas de bain froid, pas de glaçons — augmente le frisson</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🚦</span><div class="card-title">Tableau : quand consulter</div></div>
+    <div class="card-body">
+      <div class="urgency-row"><span class="urgency-tag tag-ok">ATTENDRE</span><div class="urgency-text">Rhume sans fièvre, nez qui coule, toux légère — lavage de nez au sérum physiologique, surveillance</div></div>
+      <div class="urgency-row"><span class="urgency-tag tag-med">MÉDECIN</span><div class="urgency-text">Fièvre >38°C chez >3 mois, toux qui dure >7 jours, oreille tiraillée, refus alimentation partiel</div></div>
+      <div class="urgency-row"><span class="urgency-tag tag-urg">URGENCES</span><div class="urgency-text">Fièvre chez <3 mois, difficultés respiratoires marquées (creusement des côtes), convulsions, perte de conscience, fontanelle bombée, taches rouges qui ne s'effacent pas sous pression</div></div>
+      <div class="urgency-row"><span class="urgency-tag tag-ok">ATTENDRE</span><div class="urgency-text">Régurgitations fréquentes si prise de poids normale — position semi-inclinée, fractionner les repas</div></div>
+      <div class="urgency-row"><span class="urgency-tag tag-med">MÉDECIN</span><div class="urgency-text">Diarrhée >3 selles molles/jour depuis 48h, vomissements répétés sans garder rien, sang dans selles</div></div>
+      <div class="urgency-row"><span class="urgency-tag tag-urg">URGENCES</span><div class="urgency-text">Signes de déshydratation : bouche sèche, pleurs sans larmes, fontanelle enfoncée, yeux cernés creux, pas d'urine depuis 8h</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🤒</span><div class="card-title">Maladies courantes</div></div>
+    <div class="card-body">
+      <div class="section-label">Bronchiolite</div>
+      <div class="alert-warn"><div class="alert-text"><b>Saison :</b> octobre à mars. <b>Signes :</b> rhume qui descend dans les bronches, respiration sifflante, toux grasse, petite fièvre. <b>À faire :</b> lavages de nez au sérum phy. 6x/jour, position semi-inclinée, tétées/biberons plus petits et plus fréquents (bronches comprimées). <b>Urgences si :</b> fréquence respiratoire >60/min, creusement entre les côtes, coloration bleutée lèvres, refus total de s'alimenter depuis 6h.</div></div>
+      <div class="divider"></div>
+      <div class="section-label">Otite</div>
+      <div class="alert-warn"><div class="alert-text"><b>Signes :</b> pleurs intenses surtout la nuit, fièvre, tire l'oreille (>6 mois), refus du biberon (douleur à la déglutition). <b>Avant 2 ans :</b> antibiotiques presque toujours nécessaires. Consulter.</div></div>
+      <div class="divider"></div>
+      <div class="section-label">Gastro-entérite</div>
+      <div class="alert-warn"><div class="alert-text"><b>Règle n°1 :</b> la réhydratation prime sur tout. SRO (Guigoz, Adiaril) donné à la cuillère ou au biberon. <b>Allaitement :</b> continuez, le lait maternel est le meilleur traitement. <b>Biberon :</b> continuez mais fractionnez. <b>Durée normale :</b> 3-7 jours. <b>Urgences si :</b> signes déshydratation (voir tableau).</div></div>
+      <div class="divider"></div>
+      <div class="section-label">Poussées dentaires</div>
+      <div class="alert-ok"><div class="alert-text"><b>Signes :</b> hypersalivation, gencives rouges et gonflées, main en bouche constante, irritabilité, fièvre légère ≤38.5°C. <b>À faire :</b> anneau de dentition froid (pas congelé), gels de gencive SANS lidocaïne pour les <2 ans, paracétamol si vraiment inconfort. <b>Note :</b> les poussées dentaires NE causent PAS de fièvre >38.5°C — si plus, chercher une autre cause.</div></div>
+      <div class="divider"></div>
+      <div class="section-label">Coliques du nourrisson</div>
+      <div class="alert-ok"><div class="alert-text"><b>Définition :</b> pleurs intenses >3h/jour, >3 jours/semaine, >3 semaines, chez un bébé sain. <b>Cause :</b> inconnue (hypersensibilité intestinale, microbiome immature). <b>Ce qui MARCHE :</b> mouvement (voiture, porte-bébé), bruit blanc intense, portage, massage du ventre dans le sens des aiguilles d'une montre. <b>Ce qui ne marche PAS :</b> changer de lait sans avis médical, médicaments "spécial coliques" (efficacité non prouvée). <b>Bonne nouvelle :</b> disparaît vers 3-4 mois.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">💊</span><div class="card-title">Médicaments & dosages</div></div>
+    <div class="card-body">
+      <div class="alert-ok"><div class="alert-title">Paracétamol</div><div class="alert-text"><b>Dose :</b> 15 mg/kg/prise, toutes les 6h maximum, max 4 prises/24h<br><b>Doliprane pédiatrique suspension :</b> 2,4% = 24 mg/mL<br>Exemple : bébé 6 kg → 6 × 15 = 90 mg → 3,75 mL</div></div>
+      <div class="alert-warn" style="margin-top:8px"><div class="alert-title">Ibuprofène (Advil, Nurofen)</div><div class="alert-text"><b>À partir de 3 mois et 6 kg seulement.</b><br>Dose : 7-10 mg/kg/prise toutes les 8h<br><b>Ne jamais donner si :</b> déshydratation, varicelle, avant 3 mois, problème rénal</div></div>
+      <div class="alert-urg" style="margin-top:8px"><div class="alert-title">⚠️ JAMAIS</div><div class="alert-text">Aspirine avant 16 ans. Antibiotiques sans ordonnance. Médicaments des adultes. "Un peu" d'alcool pour les dents (mythe dangereux).</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">💉</span><div class="card-title">Calendrier vaccinal France</div></div>
+    <div class="card-body">
+      <ul class="info-list">
+        <li class="info-item"><div class="info-bullet">2m</div><div><b>Hexavalent (DTP-Coq-HiB-HepB) + Pneumocoque 13 + Méningocoque B</b> — 1re dose</div></li>
+        <li class="info-item"><div class="info-bullet">3m</div><div><b>Méningocoque B</b> — 2e dose (seul ce mois)</div></li>
+        <li class="info-item"><div class="info-bullet">4m</div><div><b>Hexavalent + Pneumocoque</b> — 2e dose</div></li>
+        <li class="info-item"><div class="info-bullet">5m</div><div><b>Méningocoque B</b> — 3e dose</div></li>
+        <li class="info-item"><div class="info-bullet">6m</div><div><b>Hexavalent + Pneumocoque + Rotavirus (oral)</b> — 3e dose</div></li>
+        <li class="info-item"><div class="info-bullet">11m</div><div><b>Hexavalent + Pneumocoque + Méningocoque C + Méningocoque B</b> — rappels</div></li>
+        <li class="info-item"><div class="info-bullet">12m</div><div><b>ROR (Rougeole-Oreillons-Rubéole) + Varicelle + Méningocoque C</b></div></li>
+      </ul>
+      <div class="alert-ok" style="margin-top:12px"><div class="alert-title">✅ Après les vaccins</div><div class="alert-text">Réaction normale : fièvre légère (<38.5°C) 24-48h, rougeur au point d'injection, irritabilité. Paracétamol autorisé. Si fièvre >39°C ou convulsions → urgences.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🚨</span><div class="card-title">Premiers secours</div></div>
+    <div class="card-body">
+      <div class="section-label">🫁 Manœuvre d'étouffement bébé < 1 an (5+5)</div>
+      <div class="alert-urg"><div class="alert-text">
+        <b>1. Appel immédiat du 15</b><br>
+        <b>2. Cinq claques dans le dos :</b> bébé à plat ventre sur votre avant-bras, tête plus basse que le reste, 5 claques vigoureuses entre les omoplates avec le plat de la main<br>
+        <b>3. Cinq compressions thoraciques :</b> retournez bébé sur le dos, 2 doigts sur le sternum sous la ligne des mamelons, 5 compressions rapides<br>
+        <b>4. Répétez</b> jusqu'à expulsion de l'objet ou arrivée des secours<br>
+        <b>JAMAIS</b> de manœuvre de Heimlich (abdominale) avant 1 an
+      </div></div>
+      <div class="divider"></div>
+      <div class="section-label">⚡ Convulsions fébriles</div>
+      <div class="alert-warn"><div class="alert-text">
+        Courantes entre 6 mois et 5 ans. Spectaculaires mais généralement sans séquelle.<br>
+        <b>À faire :</b> positionner bébé sur le côté (position latérale de sécurité), dégager les voies aériennes, ne PAS mettre les doigts dans la bouche, noter la durée.<br>
+        <b>Appeler le 15 si :</b> convulsion >5 min, bébé ne reprend pas conscience, 2e convulsion dans la journée.
+      </div></div>
+    </div>
+  </div>
+`;
+
+// ══════════════════════════════════════════════════════════
+//  JOURNAL DATA
+// ══════════════════════════════════════════════════════════
+const MILESTONES = [
+  {icon:'😊', name:'Premier sourire social'},
+  {icon:'😂', name:'Premier rire aux éclats'},
+  {icon:'🔄', name:'Premier retournement'},
+  {icon:'🧸', name:'Saisit un objet volontairement'},
+  {icon:'🪑', name:'Tient assis seul'},
+  {icon:'🐛', name:'Première reptation / rampe'},
+  {icon:'🦷', name:'Première dent'},
+  {icon:'🗣️', name:'Premier "mama" ou "papa"'},
+  {icon:'👋', name:'Premier "au revoir"'},
+  {icon:'☝️', name:'Premier pointage du doigt'},
+  {icon:'🚶', name:'Premiers pas'},
+  {icon:'🍽️', name:'Mange seul à la cuillère'},
+];
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='alim' && !window._alimInit) { initAlim(); window._alimInit=true; }
+  if(name==='sommeil' && !window._sommeilInit) { initSommeil(); window._sommeilInit=true; }
+  if(name==='sante' && !window._santeInit) { initSante(); window._santeInit=true; }
+  if(name==='journal' && !window._journalInit) { initJournal(); window._journalInit=true; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  MOIS PAR MOIS
+// ══════════════════════════════════════════════════════════
+let currentMonth = 1;
+function initMonths() {
+  const strip = document.getElementById('monthStrip');
+  MONTHS.forEach(m => {
+    const pill = document.createElement('button');
+    pill.className = 'month-pill' + (m.num===1?' active':'');
+    pill.textContent = m.label;
+    pill.onclick = () => selectMonth(m.num);
+    strip.appendChild(pill);
+  });
+  renderMonth(1);
+}
+
+function selectMonth(n) {
+  currentMonth = n;
+  document.querySelectorAll('.month-pill').forEach((p,i) => {
+    p.classList.toggle('active', MONTHS[i].num===n);
+  });
+  const pill = document.querySelectorAll('.month-pill')[n-1];
+  if(pill) pill.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  renderMonth(n);
+}
+
+function renderMonth(n) {
+  const m = MONTHS.find(x=>x.num===n);
+  const c = document.getElementById('monthContent');
+  const hasVaccins = m.vaccins && m.vaccins.length>0;
+  c.innerHTML = `
+    <div class="sf-message fade-in">
+      <span class="sf-avatar">👩‍⚕️</span>
+      <div class="sf-name">Message de votre sage-femme — Mois ${m.num}</div>
+      <div class="sf-text">${m.message}</div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-header"><span class="card-icon">📏</span><div class="card-title">Croissance attendue</div></div>
+      <div class="card-body">
+        <div class="growth-row">
+          <div class="growth-pill"><div class="growth-val">${m.poids}</div><div class="growth-unit">kilogrammes</div><div class="growth-label">Poids moyen</div></div>
+          <div class="growth-pill"><div class="growth-val">${m.taille}</div><div class="growth-unit">centimètres</div><div class="growth-label">Taille moyenne</div></div>
+        </div>
+        <div class="alert-ok" style="margin-top:8px"><div class="alert-text">Ces chiffres sont des <b>moyennes</b> — une large variation est normale. Ce qui compte : la <b>courbe de croissance</b> de votre bébé est régulière, pas sa position par rapport à la moyenne.</div></div>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-header"><span class="card-icon">⭐</span><div class="card-title">Ce que bébé sait faire</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          ${m.competences.map(c=>`<li class="info-item"><div class="info-bullet">✨</div><div><b>${c.label} :</b> ${c.desc}</div></li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-header"><span class="card-icon">😴</span><div class="card-title">Sommeil ce mois</div></div>
+      <div class="card-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-val">${m.sommeil.total.split('/')[0]}</div><div class="stat-lab">heures totales</div></div>
+          <div class="stat-box"><div class="stat-val">${m.sommeil.siestes}</div><div class="stat-lab">siestes/j</div></div>
+          <div class="stat-box"><div class="stat-val">💤</div><div class="stat-lab">nuits</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-label">Conseils terrain</div>
+        <ul class="info-list">
+          ${m.sommeil.conseils.map(c=>`<li class="info-item"><div class="info-bullet">💡</div><div>${c}</div></li>`).join('')}
+        </ul>
+        <div style="margin-top:8px;padding:10px 12px;background:var(--beige);border-radius:var(--radius-sm);font-size:13px;color:var(--text-soft)"><b>La nuit :</b> ${m.sommeil.nuits}</div>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-header"><span class="card-icon">🍼</span><div class="card-title">Alimentation ce mois</div></div>
+      <div class="card-body">
+        <div class="section-label">Type</div>
+        <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:8px">${m.alimentation.type}</div>
+        <div class="section-label">Fréquence</div>
+        <div style="font-size:14px;color:var(--text-soft);margin-bottom:12px">${m.alimentation.freq}</div>
+        <ul class="info-list">
+          ${m.alimentation.details.map(d=>`<li class="info-item"><div class="info-bullet">→</div><div>${d}</div></li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-header"><span class="card-icon">✅</span><div class="card-title">Normal — ne vous inquiétez pas</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          ${m.normal.map(n=>`<li class="info-item"><div class="info-bullet" style="background:linear-gradient(135deg,var(--sage),var(--sage-deep))">✓</div><div>${n}</div></li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-header"><span class="card-icon">🚨</span><div class="card-title">Signaux d'alarme à ne pas ignorer</div></div>
+      <div class="card-body">
+        <ul class="info-list">
+          ${m.alarmes.map(a=>`<li class="info-item"><div class="info-bullet" style="background:linear-gradient(135deg,#F2C4CE,var(--rose-deep))">!</div><div>${a}</div></li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    ${hasVaccins ? `<div class="card fade-in">
+      <div class="card-header"><span class="card-icon">💉</span><div class="card-title">Vaccins ce mois</div></div>
+      <div class="card-body">
+        ${m.vaccins.map(v=>`<span class="vaccine-badge">💉 ${v}</span>`).join('')}
+        <div class="alert-ok" style="margin-top:12px"><div class="alert-text">Fièvre légère et irritabilité dans les 24-48h post-vaccin : normal. Paracétamol autorisé. Si fièvre >39°C ou réaction marquée : appelez votre médecin.</div></div>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ══════════════════════════════════════════════════════════
+//  ALIMENTATION
+// ══════════════════════════════════════════════════════════
+let currentAlimTab = 'allait';
+function initAlim() { showAlimTab('allait'); }
+function showAlimTab(tab) {
+  currentAlimTab = tab;
+  document.querySelectorAll('#screen-alim .inner-tab').forEach((t,i) => {
+    const tabs = ['allait','biberon','divers','recettes'];
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.getElementById('alimContent').innerHTML = ALIM_DATA[tab] || '';
+}
+
+// ══════════════════════════════════════════════════════════
+//  SOMMEIL
+// ══════════════════════════════════════════════════════════
+function initSommeil() {
+  document.getElementById('sommeilContent').innerHTML = SOMMEIL_HTML;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SANTÉ
+// ══════════════════════════════════════════════════════════
+function initSante() {
+  document.getElementById('santeContent').innerHTML = SANTE_HTML;
+}
+
+// ══════════════════════════════════════════════════════════
+//  JOURNAL
+// ══════════════════════════════════════════════════════════
+function initJournal() { showJournalTab('notes'); }
+
+// ── showJournalTab ────────────────────────────────────────
+function showJournalTab(tab) {
+  document.querySelectorAll('#screen-journal .inner-tab').forEach((t,i) => {
+    const tabs = ['notes','croissance','vaccins','premiers'];
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.getElementById('journalContent').innerHTML = '<div style="text-align:center;padding:40px;font-size:28px">🌸</div>';
+  if(tab==='notes') renderNotesTab();
+  else if(tab==='croissance') renderCroissanceTab();
+  else if(tab==='vaccins') renderVaccinsTab();
+  else if(tab==='premiers') renderPremiersTab();
+}
+
+// NOTES
+async function renderNotesTab(editIdx) {
+  const notes = (await getItem('bebe_notes')) || [];
+  const realIdxMap = notes.map((_,i)=>i).reverse();
+  document.getElementById('journalContent').innerHTML = `
+    <div class="card" style="margin:12px 16px">
+      <div class="card-header"><span class="card-icon">✏️</span><div class="card-title">${editIdx!=null?'Modifier la note':'Nouvelle note'}</div></div>
+      <div class="card-body">
+        ${editIdx!=null ? `<input type="hidden" id="noteEditIdx" value="${editIdx}">` : ''}
+        <div class="input-group">
+          <label class="input-label">Note du jour</label>
+          <textarea class="input-field" id="noteText" placeholder="Ce que bébé a fait aujourd'hui...">${editIdx!=null ? notes[editIdx].text : ''}</textarea>
+        </div>
+        ${editIdx!=null
+          ? `<div style="display:flex;gap:8px"><button id="btnSaveNote" style="flex:1;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--rose),var(--rose-deep));color:#fff;font-family:Nunito,sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer">Mettre à jour</button><button id="btnCancelNote" style="flex:1;padding:14px;border-radius:12px;background:var(--beige);color:var(--text-soft);font-family:Nunito,sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer">Annuler</button></div>`
+          : `<button id="btnSaveNote" class="btn-primary">Enregistrer</button>`
+        }
+      </div>
+    </div>
+    <div style="padding:0 16px" id="notesListe">
+      ${notes.length===0 ? '<div style="text-align:center;padding:32px;color:var(--text-light)">Votre journal est vierge 🌸<br>Commencez à écrire vos souvenirs !</div>' :
+        notes.slice().reverse().map((n,ri)=>{
+          const realIdx = realIdxMap[ri];
+          return `<div class="journal-entry">
+            <div class="entry-date">${n.date}</div>
+            <div class="entry-text">${n.text}</div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button data-action="edit-note" data-idx="${realIdx}" style="padding:5px 12px;border-radius:50px;border:1.5px solid var(--rose);background:transparent;color:var(--rose-deep);font-size:12px;font-weight:600;cursor:pointer">✏️ Modifier</button>
+              <button data-action="delete-note" data-idx="${realIdx}" style="padding:5px 12px;border-radius:50px;border:1.5px solid var(--beige-warm);background:transparent;color:var(--text-light);font-size:12px;font-weight:600;cursor:pointer">🗑 Supprimer</button>
+            </div>
+          </div>`;}).join('')
+      }
+    </div>
+  `;
+  const btnSave = document.getElementById('btnSaveNote');
+  if(btnSave) btnSave.addEventListener('click', saveNote);
+  const btnCancel = document.getElementById('btnCancelNote');
+  if(btnCancel) btnCancel.addEventListener('click', ()=>showJournalTab('notes'));
+  const liste = document.getElementById('notesListe');
+  if(liste) {
+    liste.addEventListener('click', async function(e) {
+      const btn = e.target.closest('button[data-action]');
+      if(!btn) return;
+      const idx = parseInt(btn.dataset.idx);
+      if(btn.dataset.action === 'delete-note') {
+        if(!confirm('Supprimer cette note ?')) return;
+        const notes = (await getItem('bebe_notes')) || [];
+        notes.splice(idx, 1);
+        await setItem('bebe_notes', notes);
+        showJournalTab('notes');
+      } else if(btn.dataset.action === 'edit-note') {
+        renderNotesTab(idx);
+      }
+    });
+  }
+}
+
+async function saveNote() {
+  const text = document.getElementById('noteText').value.trim();
+  if(!text) return;
+  document.getElementById('btnSaveNote').textContent = '…';
+  const editIdxEl = document.getElementById('noteEditIdx');
+  const editIdx = editIdxEl ? parseInt(editIdxEl.value) : null;
+  const notes = (await getItem('bebe_notes')) || [];
+  if(editIdx!=null) { notes[editIdx].text = text; }
+  else { notes.push({ date: new Date().toLocaleDateString('fr-FR', {weekday:'long',year:'numeric',month:'long',day:'numeric'}), text }); }
+  await setItem('bebe_notes', notes);
+  showJournalTab('notes');
+}
+
+// CROISSANCE
+async function renderCroissanceTab(editIdx) {
+  const entries = (await getItem('bebe_growth')) || [];
+  const ee = editIdx!=null ? entries[editIdx] : null;
+  document.getElementById('journalContent').innerHTML = `
+    <div class="card" style="margin:12px 16px">
+      <div class="card-header"><span class="card-icon">📊</span><div class="card-title">${ee?'Modifier la mesure':'Ajouter une mesure'}</div></div>
+      <div class="card-body">
+        ${editIdx!=null ? `<input type="hidden" id="growthEditIdx" value="${editIdx}">` : ''}
+        <div style="display:flex;gap:8px">
+          <div class="input-group" style="flex:1"><label class="input-label">Âge (mois)</label>
+            <input type="number" class="input-field" id="growthAge" placeholder="ex: 3" min="0" max="24" value="${ee?ee.age:''}"></div>
+          <div class="input-group" style="flex:1"><label class="input-label">Poids (kg)</label>
+            <input type="number" class="input-field" id="growthPoids" placeholder="ex: 5.5" step="0.1" value="${ee?ee.poids:''}"></div>
+          <div class="input-group" style="flex:1"><label class="input-label">Taille (cm)</label>
+            <input type="number" class="input-field" id="growthTaille" placeholder="ex: 60" value="${ee?ee.taille:''}"></div>
+        </div>
+        ${ee
+          ? `<div style="display:flex;gap:8px"><button class="btn-sage" id="btnSaveGrowth" style="flex:1">Mettre à jour</button><button class="btn-primary" id="btnCancelGrowth" style="flex:1;background:var(--beige);color:var(--text-soft);box-shadow:none">Annuler</button></div>`
+          : `<button class="btn-sage" id="btnSaveGrowth">Enregistrer</button>`}
+      </div>
+    </div>
+    <div class="card" style="margin:12px 16px">
+      <div class="card-header"><span class="card-icon">📈</span><div class="card-title">Courbe de poids</div></div>
+      <div class="card-body" style="padding:12px 8px">
+        <canvas id="growthCanvas" width="340" height="200" style="width:100%;height:auto"></canvas>
+      </div>
+    </div>
+    <div class="card" style="margin:12px 16px">
+      <div class="card-header"><span class="card-icon">📋</span><div class="card-title">Historique</div></div>
+      <div class="card-body" id="growthHistorique">
+        ${entries.length===0
+          ? '<div style="color:var(--text-light);text-align:center;padding:16px">Aucune mesure enregistrée</div>'
+          : entries.map((e,i)=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--beige)">
+              <span style="color:var(--text-soft);min-width:52px">Mois ${e.age}</span>
+              <span style="font-weight:600">${e.poids} kg</span>
+              <span style="color:var(--text-soft)">${e.taille} cm</span>
+              <div style="display:flex;gap:4px">
+                <button data-action="edit-growth" data-idx="${i}" style="padding:3px 9px;border-radius:50px;border:1.5px solid var(--rose);background:transparent;color:var(--rose-deep);font-size:11px;font-weight:600;cursor:pointer">✏️</button>
+                <button data-action="delete-growth" data-idx="${i}" style="padding:3px 9px;border-radius:50px;border:1.5px solid var(--beige-warm);background:transparent;color:var(--text-light);font-size:11px;cursor:pointer">🗑</button>
+              </div>
+            </div>`).join('')}
+      </div>
+    </div>
+  `;
+  const btnSave = document.getElementById('btnSaveGrowth');
+  if(btnSave) btnSave.addEventListener('click', saveGrowth);
+  const btnCancel = document.getElementById('btnCancelGrowth');
+  if(btnCancel) btnCancel.addEventListener('click', ()=>showJournalTab('croissance'));
+  const histo = document.getElementById('growthHistorique');
+  if(histo) {
+    histo.addEventListener('click', async function(e) {
+      const btn = e.target.closest('button[data-action]');
+      if(!btn) return;
+      const idx = parseInt(btn.dataset.idx);
+      if(btn.dataset.action === 'delete-growth') {
+        if(!confirm('Supprimer cette mesure ?')) return;
+        const entries = (await getItem('bebe_growth')) || [];
+        entries.splice(idx, 1);
+        await setItem('bebe_growth', entries);
+        showJournalTab('croissance');
+      } else if(btn.dataset.action === 'edit-growth') {
+        renderCroissanceTab(idx);
+      }
+    });
+  }
+  setTimeout(drawGrowthChart, 80);
+}
+
+async function saveGrowth() {
+  const age = document.getElementById('growthAge').value;
+  const poids = document.getElementById('growthPoids').value;
+  const taille = document.getElementById('growthTaille').value;
+  if(!age || !poids) return;
+  document.getElementById('btnSaveGrowth').textContent = '…';
+  const editIdxEl = document.getElementById('growthEditIdx');
+  const editIdx = editIdxEl ? parseInt(editIdxEl.value) : null;
+  const entries = (await getItem('bebe_growth')) || [];
+  const entry = {age:parseFloat(age),poids:parseFloat(poids),taille:parseFloat(taille)||0,date:new Date().toLocaleDateString('fr-FR')};
+  if(editIdx!=null) { entries[editIdx] = entry; }
+  else { const ex = entries.findIndex(e=>e.age==age); if(ex>-1) entries[ex]=entry; else entries.push(entry); }
+  entries.sort((a,b)=>a.age-b.age);
+  await setItem('bebe_growth', entries);
+  showJournalTab('croissance');
+}
+
+async function drawGrowthChart() {
+  const canvas = document.getElementById('growthCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const entries = (await getItem('bebe_growth')) || [];
+  const W=canvas.width,H=canvas.height,pad={t:20,r:20,b:40,l:45};
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#FDFAF6'; ctx.fillRect(0,0,W,H);
+  const omsP3=[3.2,3.9,4.7,5.4,6.0,6.6,7.1,7.5,7.9,8.2,8.5,8.7,9.0];
+  const omsP50=[3.8,4.9,5.8,6.6,7.2,7.8,8.2,8.6,9.0,9.4,9.7,9.9,10.2];
+  const omsP97=[4.5,5.9,7.1,8.0,8.7,9.3,9.8,10.3,10.7,11.1,11.5,11.8,12.1];
+  const maxAge=12,minW=2.5,maxW=13;
+  const xS=(age)=>pad.l+(age/maxAge)*(W-pad.l-pad.r);
+  const yS=(w)=>H-pad.b-((w-minW)/(maxW-minW))*(H-pad.t-pad.b);
+  ctx.strokeStyle='rgba(180,140,140,0.12)';ctx.lineWidth=1;
+  for(let kg=3;kg<=12;kg+=1.5){ctx.beginPath();ctx.moveTo(pad.l,yS(kg));ctx.lineTo(W-pad.r,yS(kg));ctx.stroke();}
+  for(let mo=0;mo<=12;mo+=3){ctx.beginPath();ctx.moveTo(xS(mo),pad.t);ctx.lineTo(xS(mo),H-pad.b);ctx.stroke();}
+  ctx.fillStyle='#A89090';ctx.font='10px Nunito';ctx.textAlign='right';
+  [3,4.5,6,7.5,9,10.5,12].forEach(kg=>{ctx.fillText(kg+'kg',pad.l-5,yS(kg)+4);});
+  ctx.textAlign='center';
+  [0,3,6,9,12].forEach(mo=>{ctx.fillText(mo+'m',xS(mo),H-8);});
+  function drawRef(data,color,dashed=false){
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;
+    if(dashed)ctx.setLineDash([4,3]);else ctx.setLineDash([]);
+    ctx.beginPath();data.forEach((w,i)=>{const x=xS(i);const y=yS(w);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.stroke();ctx.setLineDash([]);
+  }
+  drawRef(omsP3,'rgba(184,201,176,0.7)',true);
+  drawRef(omsP50,'rgba(143,175,133,0.8)');
+  drawRef(omsP97,'rgba(184,201,176,0.7)',true);
+  ctx.fillStyle='rgba(143,175,133,0.8)';ctx.font='9px Nunito';ctx.textAlign='left';
+  ctx.fillText('P50',W-pad.r+2,yS(omsP50[12]));
+  if(entries.length>0){
+    ctx.strokeStyle='#E8A0B0';ctx.lineWidth=2.5;ctx.setLineDash([]);
+    ctx.beginPath();entries.forEach((e,i)=>{const x=xS(e.age);const y=yS(e.poids);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+    entries.forEach(e=>{
+      ctx.fillStyle='#E8A0B0';ctx.beginPath();ctx.arc(xS(e.age),yS(e.poids),4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(xS(e.age),yS(e.poids),2,0,Math.PI*2);ctx.fill();
+    });
+  }
+}
+
+// VACCINS
+async function renderVaccinsTab(editIdx) {
+  const vaccins = (await getItem('bebe_vaccins')) || [];
+  const ev = editIdx!=null ? vaccins[editIdx] : null;
+  document.getElementById('journalContent').innerHTML = `
+    <div class="card" style="margin:12px 16px">
+      <div class="card-header"><span class="card-icon">💉</span><div class="card-title">${ev?'Modifier le vaccin':'Enregistrer un vaccin'}</div></div>
+      <div class="card-body">
+        ${editIdx!=null ? `<input type="hidden" id="vaccinEditIdx" value="${editIdx}">` : ''}
+        <div class="input-group"><label class="input-label">Vaccin administré</label>
+          <input type="text" class="input-field" id="vaccinNom" placeholder="ex: Hexavalent 1re dose" value="${ev?ev.nom:''}">
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="input-group" style="flex:1"><label class="input-label">Date</label>
+            <input type="date" class="input-field" id="vaccinDate" value="${ev&&ev._rawDate?ev._rawDate:''}"></div>
+          <div class="input-group" style="flex:1"><label class="input-label">Âge bébé</label>
+            <input type="text" class="input-field" id="vaccinAge" placeholder="ex: 2 mois" value="${ev?ev.age:''}"></div>
+        </div>
+        <div class="input-group"><label class="input-label">Réactions éventuelles</label>
+          <input type="text" class="input-field" id="vaccinReaction" placeholder="ex: Fièvre 38.2°C" value="${ev?ev.reaction:''}">
+        </div>
+        ${ev
+          ? `<div style="display:flex;gap:8px"><button id="btnSaveVaccin" style="flex:1;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--rose),var(--rose-deep));color:#fff;font-family:Nunito,sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer">Mettre à jour</button><button id="btnCancelVaccin" style="flex:1;padding:14px;border-radius:12px;background:var(--beige);color:var(--text-soft);font-family:Nunito,sans-serif;font-size:15px;font-weight:700;border:none;cursor:pointer">Annuler</button></div>`
+          : `<button id="btnSaveVaccin" class="btn-primary">Enregistrer</button>`}
+      </div>
+    </div>
+    <div style="padding:0 16px" id="vaccinsListe">
+      ${vaccins.length===0 ? '<div style="text-align:center;padding:32px;color:var(--text-light)">Aucun vaccin enregistré 💉</div>' :
+        vaccins.slice().reverse().map((v,ri)=>{
+          const realIdx = vaccins.length - 1 - ri;
+          return `<div class="journal-entry">
+            <div class="entry-date">${v.date} — ${v.age}</div>
+            <div class="entry-text" style="font-weight:600;color:var(--text)">${v.nom}</div>
+            ${v.reaction ? `<div class="entry-text" style="margin-top:4px;font-size:12px">Réaction : ${v.reaction}</div>` : ''}
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button data-action="edit-vaccin" data-idx="${realIdx}" style="padding:5px 12px;border-radius:50px;border:1.5px solid var(--rose);background:transparent;color:var(--rose-deep);font-size:12px;font-weight:600;cursor:pointer">✏️ Modifier</button>
+              <button data-action="delete-vaccin" data-idx="${realIdx}" style="padding:5px 12px;border-radius:50px;border:1.5px solid var(--beige-warm);background:transparent;color:var(--text-light);font-size:12px;font-weight:600;cursor:pointer">🗑 Supprimer</button>
+            </div>
+          </div>`;}).join('')}
+    </div>
+  `;
+  const btnSave = document.getElementById('btnSaveVaccin');
+  if(btnSave) btnSave.addEventListener('click', saveVaccin);
+  const btnCancel = document.getElementById('btnCancelVaccin');
+  if(btnCancel) btnCancel.addEventListener('click', ()=>showJournalTab('vaccins'));
+  const liste = document.getElementById('vaccinsListe');
+  if(liste) {
+    liste.addEventListener('click', async function(e) {
+      const btn = e.target.closest('button[data-action]');
+      if(!btn) return;
+      const idx = parseInt(btn.dataset.idx);
+      if(btn.dataset.action === 'delete-vaccin') {
+        if(!confirm('Supprimer ce vaccin ?')) return;
+        const vaccins = (await getItem('bebe_vaccins')) || [];
+        vaccins.splice(idx, 1);
+        await setItem('bebe_vaccins', vaccins);
+        showJournalTab('vaccins');
+      } else if(btn.dataset.action === 'edit-vaccin') {
+        renderVaccinsTab(idx);
+      }
+    });
+  }
+}
+
+async function saveVaccin() {
+  const nom = document.getElementById('vaccinNom').value.trim();
+  const dateRaw = document.getElementById('vaccinDate').value;
+  const age = document.getElementById('vaccinAge').value.trim();
+  const reaction = document.getElementById('vaccinReaction').value.trim();
+  if(!nom) return;
+  document.getElementById('btnSaveVaccin').textContent = '…';
+  const editIdxEl = document.getElementById('vaccinEditIdx');
+  const editIdx = editIdxEl ? parseInt(editIdxEl.value) : null;
+  const vaccins = (await getItem('bebe_vaccins')) || [];
+  const entry = {nom, date: dateRaw ? new Date(dateRaw).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'), _rawDate:dateRaw, age, reaction};
+  if(editIdx!=null) { vaccins[editIdx]=entry; } else { vaccins.push(entry); }
+  await setItem('bebe_vaccins', vaccins);
+  showJournalTab('vaccins');
+}
+
+// PREMIÈRES FOIS
+async function renderPremiersTab() {
+  const done = (await getItem('bebe_milestones')) || {};
+  document.getElementById('journalContent').innerHTML = `
+    <div class="sf-message" style="margin:12px 16px">
+      <span class="sf-avatar">⭐</span>
+      <div class="sf-name">Chaque première fois</div>
+      <div class="sf-text">Ces moments sont éphémères et précieux. Notez-les — dans 20 ans, vous relirez ce journal avec des larmes de bonheur.</div>
+    </div>
+    <div style="padding:0 16px 16px" id="milestonesList">
+      ${MILESTONES.map((m,i)=>`
+        <div class="milestone-row">
+          <div class="milestone-icon">${m.icon}</div>
+          <div style="flex:1">
+            <div class="milestone-name">${m.name}</div>
+            ${done[i] ? `<div class="milestone-date">🗓 ${done[i].date}</div>` : '<div class="milestone-date" style="color:var(--text-light)">Pas encore…</div>'}
+          </div>
+          <div class="milestone-check ${done[i]?'done':''}" data-action="toggle-milestone" data-idx="${i}">${done[i]?'✓':''}</div>
+        </div>`).join('')}
+    </div>
+  `;
+  const list = document.getElementById('milestonesList');
+  if(list) {
+    list.addEventListener('click', async function(e) {
+      const el = e.target.closest('[data-action="toggle-milestone"]');
+      if(!el) return;
+      const i = parseInt(el.dataset.idx);
+      const done = (await getItem('bebe_milestones')) || {};
+      if(done[i]) { delete done[i]; }
+      else { done[i] = {date: new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}; }
+      await setItem('bebe_milestones', done);
+      showJournalTab('premiers');
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUPABASE + AUTH + INIT
+// ══════════════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://rzevifmlhmfhtdncgvoo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_joZrgkNR1kfpnfKdmPQmwQ_4R71mfay';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+// ─── HELPERS DB ───────────────────────────────────────────
+async function dbGet(table) {
+  if(!currentUser) return null;
+  const { data, error } = await sb.from(table).select('data').eq('user_id', currentUser.id).single();
+  if(error || !data) return null;
+  return data.data;
+}
+
+async function dbSet(table, value) {
+  if(!currentUser) return;
+  const { error } = await sb.from(table).upsert({ user_id: currentUser.id, data: value }, { onConflict: 'user_id' });
+  if(error) console.error('dbSet error', table, error);
+}
+
+// ─── MIGRATION localStorage → Supabase (1 seule fois) ────
+async function migrateLocalStorage() {
+  const keys = ['bebe_notes','bebe_growth','bebe_vaccins','bebe_milestones'];
+  for(const key of keys) {
+    const local = localStorage.getItem(key);
+    if(!local) continue;
+    const existing = await dbGet(key);
+    if(!existing) {
+      await dbSet(key, JSON.parse(local));
+    }
+    localStorage.removeItem(key);
+  }
+}
+
+// ─── WRAPPERS localStorage → Supabase ────────────────────
+// On garde les mêmes noms pour ne rien casser
+const _cache = {};
+
+async function getItem(key) {
+  if(_cache[key] !== undefined) return _cache[key];
+  const val = await dbGet(key);
+  _cache[key] = val;
+  return val;
+}
+
+async function setItem(key, value) {
+  _cache[key] = value;
+  await dbSet(key, value);
+}
+
+// ─── AUTH UI ──────────────────────────────────────────────
+let authMode = 'login';
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('authBtn').textContent = mode==='login' ? 'Se connecter' : 'Créer mon compte';
+  document.getElementById('authPrenom').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('authError').style.display = 'none';
+  document.getElementById('authSuccess').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('authSuccess').style.display = 'none';
+}
+
+function showAuthSuccess(msg) {
+  const el = document.getElementById('authSuccess');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('authError').style.display = 'none';
+}
+
+document.getElementById('authBtn').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if(!email || !password) { showAuthError('Veuillez remplir tous les champs.'); return; }
+  document.getElementById('authBtn').textContent = '…';
+
+  if(authMode === 'login') {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) { showAuthError('Email ou mot de passe incorrect.'); document.getElementById('authBtn').textContent = 'Se connecter'; }
+  } else {
+    const prenom = document.getElementById('authPrenomInput').value.trim();
+    const { error } = await sb.auth.signUp({ email, password, options:{ data:{ prenom } } });
+    if(error) { showAuthError(error.message); document.getElementById('authBtn').textContent = 'Créer mon compte'; }
+    else { showAuthSuccess('Compte créé ! Vérifiez votre email pour confirmer.'); document.getElementById('authBtn').textContent = 'Créer mon compte'; }
+  }
+});
+
+document.getElementById('btnLogout').addEventListener('click', async () => {
+  await sb.auth.signOut();
+});
+
+// ─── LANCEMENT APP ────────────────────────────────────────
+async function launchApp(user) {
+  currentUser = user;
+  document.getElementById('auth-screen').classList.add('hide');
+  document.getElementById('userBar').style.display = 'flex';
+  document.getElementById('userEmail').textContent = user.email;
+
+  // Splash
+  const splash = document.getElementById('splash');
+  splash.style.display = 'flex';
+  splash.style.position = 'fixed';
+  splash.style.inset = '0';
+  splash.style.zIndex = '1000';
+  splash.style.background = 'linear-gradient(160deg,#FDF0F3 0%,#F5EDE3 50%,#EFF4EE 100%)';
+  splash.style.flexDirection = 'column';
+  splash.style.alignItems = 'center';
+  splash.style.justifyContent = 'center';
+  splash.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+
+  await migrateLocalStorage();
+
+  setTimeout(() => {
+    splash.style.opacity = '0';
+    splash.style.transform = 'scale(1.05)';
+    splash.style.pointerEvents = 'none';
+    setTimeout(() => {
+      splash.style.display = 'none';
+      document.getElementById('app').classList.add('visible');
+      initMonths();
+    }, 800);
+  }, 1800);
+}
+
+// ─── INIT PRINCIPAL ───────────────────────────────────────
+window.addEventListener('load', async () => {
+  // Écoute les changements d'état d'auth
+  sb.auth.onAuthStateChange(async (event, session) => {
+    document.getElementById('loadingOverlay').classList.add('hide');
+    if(session?.user) {
+      if(!currentUser) await launchApp(session.user);
+    } else {
+      currentUser = null;
+      document.getElementById('auth-screen').classList.remove('hide');
+      document.getElementById('userBar').style.display = 'none';
+      document.getElementById('app').classList.remove('visible');
+    }
+  });
+
+  // Vérifie session existante
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session) {
+    document.getElementById('loadingOverlay').classList.add('hide');
+    document.getElementById('auth-screen').classList.remove('hide');
+  }
+});
+</script>
+</body>
+</html>
